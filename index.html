@@ -6,293 +6,530 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>スペース・ディフェンダー - Firebase Edition</title>
-    
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
     <style>
         :root {
             --bg-color: #020205; --panel-color: #e0e0e0; --game-bg: #050510;
-            --text-color: #ffffff; --accent-color: #00f2ff; --heat-color: #ff9f43;
-            --danger-color: #ff4d4d; --panel-border: #999;
+            --accent-color: #00f2ff; --heat-color: #ff9f43; --danger-color: #ff4d4d;
+            --gold: #ffd700; --silver: #c0c0c0; --bronze: #cd7f32; --panel-border: #999;
         }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; height: 100dvh; overflow: hidden; background-color: var(--bg-color); font-family: sans-serif; user-select: none; touch-action: none; -webkit-user-select: none; }
-        
-        /* ID入力用オーバーレイ */
-        #id-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle at center, #1b1b2f 0%, #020205 100%);
-            display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 5000;
+        body, html {
+            margin:0;padding:0;width:100%;height:100%;height:100dvh;overflow:hidden;
+            background:var(--bg-color);font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+            user-select:none;touch-action:none;-webkit-user-select:none;
         }
-        .id-box { background: rgba(255, 255, 255, 0.07); border: 2px solid var(--accent-color); padding: 40px; border-radius: 24px; backdrop-filter: blur(10px); text-align: center; }
-        .id-box input { font-size: 32px; width: 160px; text-align: center; margin: 20px 0; background: #000; color: var(--accent-color); border: 1px solid var(--accent-color); border-radius: 8px; outline: none; }
+        #game-container { position:relative;width:100vw;height:100%;height:100dvh;display:flex;flex-direction:row;overflow:hidden; }
+        #orientation-warning {
+            position:fixed;top:0;left:0;width:100%;height:100%;background:#0f3460;color:white;
+            display:none;flex-direction:column;justify-content:center;align-items:center;z-index:9999;text-align:center;padding:20px;
+        }
+        @media (orientation:portrait){#orientation-warning{display:flex;}}
 
-        /* オリジナルスタイル */
-        #game-container { position: relative; width: 100vw; height: 100dvh; display: flex; flex-direction: row; overflow: hidden; }
-        #orientation-warning { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f3460; color: white; display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; text-align: center; }
-        @media (orientation: portrait) { #orientation-warning { display: flex; } }
-        #screen-title { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #1b1b2f 0%, #020205 100%); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 100; padding: 20px; box-sizing: border-box; }
-        #screen-title h1 { color: var(--accent-color); font-size: clamp(28px, 8vw, 56px); letter-spacing: 10px; text-shadow: 0 0 25px rgba(0, 242, 255, 0.6); margin-bottom: 40px; }
-        .menu-layout { display: flex; gap: 30px; width: 100%; max-width: 900px; }
-        .menu-section { flex: 1; background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 24px; padding: 25px; display: flex; flex-direction: column; align-items: center; }
-        .btn-mode { background: var(--accent-color); color: #000; border: none; padding: 18px 24px; font-size: 14px; font-weight: bold; margin-bottom: 15px; border-radius: 50px; cursor: pointer; width: 100%; }
-        .toggle-btn { background: #222; border: 2px solid #444; color: white; padding: 15px 25px; border-radius: 50px; cursor: pointer; width: 100%; }
-        .toggle-btn.active { background: var(--danger-color); border-color: #ff8888; }
-        .control-panel { width: 18%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--panel-color); border: 3px solid var(--panel-border); z-index: 10; }
-        #game-field { flex-grow: 1; position: relative; background: var(--game-bg); }
-        canvas { display: block; width: 100%; height: 100%; }
-        #hud { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); color: white; text-align: center; pointer-events: none; z-index: 20; }
-        #screen-result { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(5, 5, 20, 0.95); border: 2px solid var(--accent-color); padding: 30px 40px; border-radius: 20px; color: white; text-align: center; display: none; z-index: 150; }
+        /* TITLE */
+        #screen-title {
+            position:absolute;top:0;left:0;width:100%;height:100%;
+            background:radial-gradient(circle at center,#1b1b2f 0%,#020205 100%);
+            display:flex;flex-direction:column;justify-content:center;align-items:center;
+            z-index:100;padding:20px;box-sizing:border-box;overflow-y:auto;gap:10px;
+        }
+        #screen-title h1 {
+            color:var(--accent-color);margin:0;font-size:clamp(28px,8vw,56px);
+            letter-spacing:10px;text-shadow:0 0 25px rgba(0,242,255,.6);
+        }
+        .firebase-badge { color:#ff9800;font-size:12px;letter-spacing:3px;text-transform:uppercase;margin-bottom:10px;opacity:.8; }
+        .menu-layout { display:flex;flex-direction:row;justify-content:center;align-items:stretch;gap:20px;width:100%;max-width:1100px;flex-shrink:0; }
+        .menu-section {
+            flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);
+            border-radius:24px;padding:20px;display:flex;flex-direction:column;align-items:center;
+            backdrop-filter:blur(10px);min-width:0;
+        }
+        .section-title {
+            color:#ccc;font-size:12px;font-weight:bold;margin-bottom:15px;text-transform:uppercase;
+            letter-spacing:2px;border-bottom:1px solid rgba(0,242,255,.3);padding-bottom:5px;width:100%;text-align:center;
+        }
+        .toggle-btn {
+            background:#222;border:2px solid #444;color:white;padding:12px 20px;border-radius:50px;cursor:pointer;
+            display:flex;align-items:center;justify-content:center;gap:12px;font-weight:bold;
+            transition:all .3s;width:100%;max-width:200px;
+        }
+        .toggle-btn.active { background:var(--danger-color);border-color:#ff8888;box-shadow:0 0 15px rgba(255,77,77,.4); }
+        .btn-mode {
+            background:var(--accent-color);color:#000;border:none;padding:15px 20px;font-size:13px;
+            font-weight:bold;margin-bottom:12px;border-radius:50px;cursor:pointer;width:100%;max-width:300px;
+            box-shadow:0 4px 15px rgba(0,242,255,.25);transition:transform .2s;
+        }
+        .btn-mode:active { transform:scale(.97); }
+        .btn-fullscreen-toggle {
+            background:rgba(0,242,255,.1);color:#00f2ff;border:2px solid #00f2ff;padding:10px 25px;
+            font-size:14px;border-radius:50px;cursor:pointer;font-weight:bold;transition:all .2s;margin-top:8px;
+        }
+        .btn-fullscreen-toggle:hover { background:rgba(0,242,255,.2);transform:scale(1.05); }
+
+        /* GAME */
+        .control-panel {
+            width:18%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;
+            background:var(--panel-color);border-left:3px solid var(--panel-border);border-right:3px solid var(--panel-border);z-index:10;
+        }
+        #game-field { flex-grow:1;position:relative;background:var(--game-bg);box-shadow:inset 0 0 100px rgba(0,0,0,.8); }
+        canvas { display:block;width:100%;height:100%; }
+        .btn-action {
+            width:90px;height:90px;background:radial-gradient(circle,#ff4757,#e84118);border-radius:50%;
+            display:flex;justify-content:center;align-items:center;color:white;font-weight:bold;
+            font-size:16px;box-shadow:0 6px 0 #8a2a1a;touch-action:none;cursor:pointer;
+        }
+        .joystick-base { width:130px;height:130px;background:rgba(0,0,0,.1);border:2px solid rgba(0,0,0,.1);border-radius:50%;position:relative;touch-action:none; }
+        .joystick-thumb { width:55px;height:55px;background:var(--accent-color);border-radius:50%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);box-shadow:0 4px 12px rgba(0,0,0,.3);pointer-events:none; }
+        #hud {
+            position:absolute;top:15px;left:50%;transform:translateX(-50%);
+            display:flex;flex-direction:column;align-items:center;gap:8px;
+            color:white;font-weight:bold;text-shadow:0 0 10px rgba(0,242,255,.5);pointer-events:none;z-index:20;
+        }
+        /* IN-GAME POPUP — removed */
+
+        /* RESULT */
+        #screen-result {
+            position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+            background:rgba(5,5,20,.97);border:2px solid var(--accent-color);padding:30px 35px;
+            border-radius:20px;color:white;text-align:center;display:none;z-index:150;
+            box-shadow:0 0 60px rgba(0,242,255,.2);min-width:340px;max-width:90vw;
+        }
+
+        /* NICKNAME MODAL */
+        #nickname-modal { display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;justify-content:center;align-items:center; }
+        #nickname-modal.show { display:flex; }
+        .modal-box {
+            background:#0d0d1f;border:2px solid var(--accent-color);border-radius:20px;
+            padding:35px;text-align:center;width:340px;max-width:90vw;
+            box-shadow:0 0 50px rgba(0,242,255,.2);animation:modalIn .3s cubic-bezier(.34,1.56,.64,1);
+        }
+        @keyframes modalIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+        .modal-box h3 { color:var(--accent-color);margin:0 0 6px 0;font-size:20px;letter-spacing:2px; }
+        .modal-box p { color:#888;font-size:13px;margin:0 0 18px 0; }
+        .score-preview { font-size:52px;font-weight:bold;color:white;line-height:1;margin-bottom:18px; }
+        #nickname-input {
+            width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);
+            border:2px solid rgba(0,242,255,.4);border-radius:12px;color:white;font-size:18px;
+            padding:12px 16px;text-align:center;outline:none;letter-spacing:2px;transition:border-color .2s;
+        }
+        #nickname-input:focus { border-color:var(--accent-color); }
+        .modal-btns { display:flex;gap:10px;margin-top:14px; }
+        .btn-submit { flex:2;background:var(--accent-color);color:#000;border:none;padding:14px;border-radius:50px;font-size:15px;font-weight:bold;cursor:pointer;transition:opacity .2s; }
+        .btn-submit:disabled { opacity:.4;cursor:not-allowed; }
+        .btn-skip { flex:1;background:rgba(255,255,255,.08);color:#777;border:1px solid #333;padding:14px;border-radius:50px;font-size:13px;cursor:pointer; }
+        .uploading-msg { color:#888;font-size:13px;margin-top:10px;min-height:18px; }
+
+        @media(max-width:768px){.menu-layout{flex-direction:column;gap:15px;}.menu-section{padding:15px;}}
     </style>
 </head>
 <body>
 
-    <div id="id-overlay">
-        <div class="id-box">
-            <h2>PLAYER ACCESS</h2>
-            <input type="text" id="player-id-input" maxlength="4" placeholder="0000">
-            <br>
-            <button class="btn-mode" onclick="verifyID()">ENTRY SYSTEM</button>
+<div id="orientation-warning">
+    <div style="width:50px;height:35px;border:2px solid white;border-radius:4px;margin-bottom:20px;"></div>
+    <h2>画面を横向きにしてください</h2>
+    <button class="btn-fullscreen-toggle" onclick="toggleFullScreen()">フルスクリーンにする</button>
+</div>
+
+<div id="screen-title">
+    <h1>SPACE DEFENDER</h1>
+    <div class="firebase-badge">🔥 Firebase Edition</div>
+    <div class="menu-layout">
+        <div class="menu-section">
+            <div class="section-title">操作モード選択</div>
+            <button class="btn-mode" onclick="startGame(1)">MODE 1 (左スティック / 右FIRE)</button>
+            <button class="btn-mode" onclick="startGame(2)">MODE 2 (右スティック / 左FIRE)</button>
+            <button class="btn-fullscreen-toggle" onclick="toggleFullScreen()">フルスクリーンにする</button>
+        </div>
+        <div class="menu-section">
+            <div class="section-title">システム設定</div>
+            <p style="color:#bbb;font-size:12px;margin:0 0 10px 0;">自機の当たり判定</p>
+            <button id="collision-toggle" class="toggle-btn" onclick="toggleCollision()">
+                <span id="toggle-icon"><svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg></span>
+                <span id="toggle-text">OFF (安全)</span>
+            </button>
+            <p style="color:#666;font-size:11px;text-align:center;margin-top:10px;">ONにすると敵接触で<br>爆発ペナルティが発生</p>
         </div>
     </div>
+</div>
 
-    <div id="screen-title">
-        <h1>SPACE DEFENDER</h1>
-        <div class="menu-layout">
-            <div class="menu-section">
-                <button class="btn-mode" onclick="startGame(1)">MODE 1 (L:STICK / R:FIRE)</button>
-                <button class="btn-mode" onclick="startGame(2)">MODE 2 (R:STICK / L:FIRE)</button>
-            </div>
-            <div class="menu-section">
-                <button id="collision-toggle" class="toggle-btn" onclick="toggleCollision()">🛡️ OFF (安全)</button>
-            </div>
+<div id="nickname-modal">
+    <div class="modal-box">
+        <h3>MISSION COMPLETE</h3>
+        <p>スコアをランキングに登録しますか？</p>
+        <div class="score-preview" id="modal-score">0</div>
+        <input id="nickname-input" type="text" maxlength="12" placeholder="ニックネーム (最大12文字)" autocomplete="off" spellcheck="false">
+        <div class="modal-btns">
+            <button class="btn-submit" id="btn-submit-score" onclick="submitScore()">🚀 登録する</button>
+            <button class="btn-skip" onclick="skipRegistration()">スキップ</button>
         </div>
+        <div class="uploading-msg" id="uploading-msg"></div>
     </div>
+</div>
 
-    <div id="game-container">
-        <div id="left-panel" class="control-panel"></div>
-        <div id="game-field">
-            <div id="hud">
-                <div style="display: flex; gap: 25px; font-size: 18px;">
-                    <div>TIME: <span id="timer">30</span>s</div>
-                    <div>SCORE: <span id="score">0</span></div>
-                    <div>BEST: <span id="best-score">0</span></div>
+<div id="game-container">
+    <div id="left-panel" class="control-panel"></div>
+    <div id="game-field">
+        <div id="hud">
+            <div style="display:flex;gap:25px;font-size:18px;">
+                <div>TIME: <span id="timer">30</span>s</div>
+                <div>SCORE: <span id="score">0</span></div>
+                <div style="color:var(--accent-color)">BEST: <span id="best-score">0</span></div>
+            </div>
+            <div style="width:220px;height:12px;background:rgba(255,255,255,.1);border-radius:6px;overflow:hidden;margin-top:5px;">
+                <div id="heat-bar" style="width:0%;height:100%;background:var(--heat-color);transition:background .2s;"></div>
+            </div>
+            <div id="heat-warning" style="color:var(--danger-color);font-size:12px;height:15px;visibility:hidden;font-weight:900;">OVERHEATED!</div>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+        <div id="screen-result">
+            <h2 style="color:var(--accent-color);margin-top:0;">MISSION COMPLETE</h2>
+            <div id="final-score" style="font-size:64px;margin:10px 0;font-weight:bold;line-height:1;">0</div>
+            <div style="display:flex;justify-content:center;gap:30px;margin:20px 0;padding:15px;background:rgba(255,255,255,.05);border-radius:12px;">
+                <div id="miss-stat" style="display:none;flex-direction:column;gap:5px;">
+                    <span style="font-size:12px;color:#889;">MISS (衝突)</span>
+                    <span id="final-miss" style="font-size:24px;font-weight:bold;color:var(--danger-color);">0</span>
                 </div>
-                <div style="width: 200px; height: 10px; background: #333; margin-top: 5px;"><div id="heat-bar" style="height: 100%; width: 0%; background: orange;"></div></div>
-                <div id="heat-warning" style="color: red; visibility: hidden; font-size: 12px;">OVERHEATED!</div>
+                <div style="display:flex;flex-direction:column;gap:5px;">
+                    <span style="font-size:12px;color:#889;">OVERHEAT</span>
+                    <span id="final-overheat" style="font-size:24px;font-weight:bold;color:var(--heat-color);">0</span>
+                </div>
             </div>
-            <canvas id="gameCanvas"></canvas>
-            <div id="screen-result">
-                <h2>MISSION COMPLETE</h2>
-                <div id="final-score" style="font-size: 48px;">0</div>
-                <button class="btn-mode" onclick="location.reload()">RETRY</button>
-            </div>
+            <div id="new-record" style="color:#ffeb3b;font-weight:bold;margin-bottom:20px;display:none;font-size:20px;text-shadow:0 0 10px rgba(255,235,59,.5);">✨ NEW RECORD!</div>
+            <button class="btn-mode" style="width:100%;max-width:none;" onclick="location.reload()">タイトルへ戻る</button>
         </div>
-        <div id="right-panel" class="control-panel"></div>
     </div>
+    <div id="right-panel" class="control-panel"></div>
+</div>
 
+<!-- Firebase SDK (module) -->
+<script type="module">
+import { initializeApp }   from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+import { getDatabase, ref, push, serverTimestamp }
+                           from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
+
+const firebaseConfig = {
+    apiKey:            "AIzaSyAWUDUE9GklRNJGg0OoaZrBDn4C91VEEEI",
+    authDomain:        "leftandroightshooter.firebaseapp.com",
+    databaseURL:       "https://leftandroightshooter-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId:         "leftandroightshooter",
+    storageBucket:     "leftandroightshooter.firebasestorage.app",
+    messagingSenderId: "696555404744",
+    appId:             "1:696555404744:web:47a3c35636d68995e094fd",
+    measurementId:     "G-TF47F86Q97"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
+// ---------- score submission ----------
+let pendingScore = 0, pendingMode = 1, pendingCollision = false;
+
+window._openNicknameModal = (sc, mode, collision) => {
+    pendingScore=sc; pendingMode=mode; pendingCollision=!!collision;
+    document.getElementById('modal-score').textContent = Number(sc).toLocaleString();
+    document.getElementById('nickname-input').value = localStorage.getItem('lastNickname')||'';
+    document.getElementById('uploading-msg').textContent = '';
+    document.getElementById('btn-submit-score').disabled = false;
+    document.getElementById('nickname-modal').classList.add('show');
+    setTimeout(()=>document.getElementById('nickname-input').focus(),100);
+};
+
+window.submitScore = async () => {
+    const nick = document.getElementById('nickname-input').value.trim();
+    if (!nick) {
+        const inp = document.getElementById('nickname-input');
+        inp.style.borderColor='var(--danger-color)';
+        setTimeout(()=>inp.style.borderColor='rgba(0,242,255,.4)',1000); return;
+    }
+    const btn=document.getElementById('btn-submit-score'), msg=document.getElementById('uploading-msg');
+    btn.disabled=true; msg.textContent='登録中... 🚀';
+    try {
+        await push(ref(db,`scores/mode${pendingMode}`), {
+            nickname: nick.slice(0,12), score: pendingScore,
+            mode: pendingMode, collisionEnabled: pendingCollision,
+            timestamp: serverTimestamp()
+        });
+        localStorage.setItem('lastNickname', nick);
+        msg.textContent='✅ 登録完了！';
+        setTimeout(()=>{ document.getElementById('nickname-modal').classList.remove('show'); window._showResult(); }, 800);
+    } catch(e) {
+        msg.textContent='❌ エラー: '+e.message; btn.disabled=false;
+    }
+};
+
+window.skipRegistration = () => {
+    document.getElementById('nickname-modal').classList.remove('show');
+    window._showResult();
+};
+
+window._firebaseReady = true;
+console.log('✅ Firebase connected');
+</script>
+
+<!-- Game (classic script, communicates via window globals) -->
 <script>
-    // --- Firebase ---
-    const firebaseConfig = {
-        apiKey: "AIzaSyAWUDUE9GklRNJGg0OoaZrBDn4C91VEEEI",
-        authDomain: "leftandroightshooter.firebaseapp.com",
-        databaseURL: "https://leftandroightshooter-default-rtdb.asia-southeast1.firebasedatabase.app",
-        projectId: "leftandroightshooter",
-        storageBucket: "leftandroightshooter.firebasestorage.app",
-        messagingSenderId: "696555404744",
-        appId: "1:696555404744:web:47a3c35636d68995e094fd",
-        measurementId: "G-TF47F86Q97"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+const sounds = {
+    shoot:       new Audio('https://raw.githubusercontent.com/kono3478/ShootingSE_NES/main/NES-Shooter01-1(Shoot).mp3'),
+    damageGreen: new Audio('https://raw.githubusercontent.com/kono3478/ShootingSE_NES/main/NES-Shooter01-3(Damage).mp3'),
+    damageYellow:new Audio('https://raw.githubusercontent.com/kono3478/ShootingSE_NES/main/NES-Shooter01-4(Damage).mp3'),
+    damageRed:   new Audio('https://raw.githubusercontent.com/kono3478/ShootingSE_SNES/main/SNES-Shooter01-06(Damage).mp3'),
+    playerDeath: new Audio('https://raw.githubusercontent.com/kono3478/ShootingSE_NES/main/NES-Shooter01-5(Damage).mp3'),
+    bgm:         new Audio('https://raw.githubusercontent.com/kono3478/BGM/main/8bit-act04_stage01.mp3')
+};
+sounds.bgm.loop=true; sounds.bgm.volume=0.4;
+function playSound(s){s.currentTime=0;s.play().catch(()=>{});}
 
-    // --- Variables ---
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-    let playerID = "";
-    let gameState = 'init_screen'; // ID入力待ち
-    let score = 0, timeLeft = 30, gameMode = 1, isCollisionEnabled = false, missCount = 0, overheatCount = 0;
-    
-    const sounds = {
-        shoot: new Audio('https://raw.githubusercontent.com/kono3478/ShootingSE_NES/main/NES-Shooter01-1(Shoot).mp3'),
-        bgm: new Audio('https://raw.githubusercontent.com/kono3478/BGM/main/8bit-act04_stage01.mp3'),
-        death: new Audio('https://raw.githubusercontent.com/kono3478/ShootingSE_NES/main/NES-Shooter01-5(Damage).mp3')
-    };
-    sounds.bgm.loop = true;
+const canvas=document.getElementById('gameCanvas'), ctx=canvas.getContext('2d');
+const scoreEl=document.getElementById('score'), bestEl=document.getElementById('best-score');
+const timerEl=document.getElementById('timer'), heatBarEl=document.getElementById('heat-bar');
+const heatWarnEl=document.getElementById('heat-warning');
+const finalScoreEl=document.getElementById('final-score'), finalMissEl=document.getElementById('final-miss');
+const finalOverheatEl=document.getElementById('final-overheat'), newRecordEl=document.getElementById('new-record');
 
-    const player = { x: 0, y: 0, radius: 18, baseSpeed: 6.5, angle: 0, color: '#00f2ff', heat: 0, isOverheated: false };
-    const joystick = { active: false, vectorX: 0, vectorY: 0, maxRadius: 45 };
-    let actionPressed = false;
-    let bullets = [], enemies = [], particles = [], stars = [];
-    const keys = { up: false, down: false, left: false, right: false };
+let gameState='title', score=0, timeLeft=30, gameMode=1;
+let spawnId=null, timerId=null, rafId=null;
+let isCollisionEnabled=false, missCount=0, overheatCount=0;
 
-    // --- Functions ---
-    function verifyID() {
-        const val = document.getElementById('player-id-input').value;
-        if (val.length === 4) {
-            playerID = val;
-            gameState = 'title';
-            document.getElementById('id-overlay').style.display = 'none';
-            document.getElementById('screen-title').style.display = 'flex';
-            init(); 
-        } else { alert("4桁入力してください"); }
-    }
+window._showResult = ()=>{ document.getElementById('screen-result').style.display='block'; };
 
-    function init() {
-        resize();
-        window.addEventListener('resize', resize);
-        stars = [];
-        for(let i=0; i<80; i++) stars.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*2, v: 0.5+Math.random()});
-        requestAnimationFrame(gameLoop);
-    }
-
-    function resize() {
-        const rect = document.getElementById('game-field').getBoundingClientRect();
-        canvas.width = rect.width; canvas.height = rect.height;
-        player.x = canvas.width/2; player.y = canvas.height/2;
-    }
-
-    function startGame(mode) {
-        gameMode = mode; gameState = 'playing'; score = 0; timeLeft = 30;
-        enemies = []; bullets = []; particles = []; overheatCount = 0; missCount = 0;
-        document.getElementById('screen-title').style.display = 'none';
-        setupControls();
-        sounds.bgm.play().catch(()=>{});
-        setInterval(() => { if(gameState==='playing'){ timeLeft--; document.getElementById('timer').innerText = timeLeft; if(timeLeft<=0) endGame(); } }, 1000);
-    }
-
-    function endGame() {
-        gameState = 'gameover'; sounds.bgm.pause();
-        document.getElementById('screen-result').style.display = 'block';
-        document.getElementById('final-score').innerText = score;
-        // Firebase保存
-        db.ref('scores').push({ id: playerID, mode: "MODE "+gameMode, collision: isCollisionEnabled?"ON":"OFF", score, overheats: overheatCount, misses: missCount, date: new Date().toLocaleString() });
-    }
-
-    // --- 管理者コマンド (Shift+D / Shift+R) ---
-    window.addEventListener('keydown', (e) => {
-        // ゲーム中の移動キー
-        if (['ArrowUp','w'].includes(e.key)) keys.up = true;
-        if (['ArrowDown','s'].includes(e.key)) keys.down = true;
-        if (['ArrowLeft','a'].includes(e.key)) keys.left = true;
-        if (['ArrowRight','d'].includes(e.key)) keys.right = true;
-
-        // 【重要】管理者コマンド：タイトル画面でなくてもID確定後なら反応するように
-        if (playerID !== "") {
-            if (e.shiftKey && e.code === 'KeyD') {
-                db.ref('scores').once('value').then(snap => {
-                    const data = snap.val(); if(!data) return alert("No data");
-                    let csv = "ID,Mode,Score,Date\n";
-                    Object.values(data).forEach(v => csv += `${v.id},${v.mode},${v.score},${v.date}\n`);
-                    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
-                    a.download = "scores.csv"; a.click();
-                });
-            }
-            if (e.shiftKey && e.code === 'KeyR') {
-                if(confirm("Clear Firebase?")) db.ref('scores').remove().then(()=>alert("Reset Done"));
-            }
-        }
+// Stars
+const stars=[];
+const starColors=['#ffffff','#afeeee','#fffacd','#ffb6c1','#00f2ff'];
+function initStars(){
+    stars.length=0;
+    for(let i=0;i<100;i++) stars.push({
+        x:Math.random()*canvas.width, y:Math.random()*canvas.height,
+        size:Math.random()*2, color:starColors[Math.floor(Math.random()*starColors.length)],
+        opacity:Math.random(), speed:0.01+Math.random()*0.03
     });
-    window.addEventListener('keyup', (e) => {
-        if (['ArrowUp','w'].includes(e.key)) keys.up = false;
-        if (['ArrowDown','s'].includes(e.key)) keys.down = false;
-        if (['ArrowLeft','a'].includes(e.key)) keys.left = false;
-        if (['ArrowRight','d'].includes(e.key)) keys.right = false;
+}
+
+// Player
+const player={x:0,y:0,radius:18,baseSpeed:6.5,angle:0,color:'#00f2ff',
+    lastFireTime:0,fireInterval:120,heat:0,isOverheated:false,
+    heatIncreasePerShot:4.8,coolDownRate:0.35,overheatCoolDownRate:0.5};
+const joystick={active:false,pointerId:null,originX:0,originY:0,vectorX:0,vectorY:0,maxRadius:45};
+let actionPressed=false;
+const bullets=[], enemies=[], particles=[];
+const enemyTypes=[
+    {type:'S',size:14,speed:4.5,score:50,color:'#ff4d4d'},
+    {type:'M',size:24,speed:3.0,score:30,color:'#f1c40f'},
+    {type:'L',size:38,speed:1.8,score:10,color:'#2ecc71'}
+];
+const keys={up:false,down:false,left:false,right:false};
+
+function resize(){
+    if(!canvas.parentElement)return;
+    canvas.width=canvas.parentElement.clientWidth;
+    canvas.height=canvas.parentElement.clientHeight;
+    initStars();
+    if(player.x===0||gameState==='title'){player.x=canvas.width/2;player.y=canvas.height/2;}
+}
+window.addEventListener('resize',()=>setTimeout(resize,200));
+
+function toggleCollision(){
+    isCollisionEnabled=!isCollisionEnabled;
+    document.getElementById('collision-toggle').classList.toggle('active',isCollisionEnabled);
+    document.getElementById('toggle-text').innerText=isCollisionEnabled?'ON (危険)':'OFF (安全)';
+    document.getElementById('toggle-icon').innerHTML=isCollisionEnabled
+        ?`<svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor"><path d="M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10 10-4.49 10-10S17.51 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3-8c0 1.66-1.34 3-3 3s-3-1.34-3-3 1.34-3 3-3 3 1.34 3 3z"/></svg>`
+        :`<svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>`;
+}
+
+async function toggleFullScreen(){
+    try{
+        const d=document,el=d.documentElement;
+        const full=!!(d.fullscreenElement||d.webkitFullscreenElement||d.mozFullScreenElement||d.msFullscreenElement);
+        if(!full){const r=el.requestFullscreen||el.mozRequestFullScreen||el.webkitRequestFullScreen||el.msRequestFullscreen;if(r)await r.call(el);}
+        else{const x=d.exitFullscreen||d.mozCancelFullScreen||d.webkitExitFullscreen||d.msExitFullscreen;if(x)await x.call(d);}
+    }catch(e){}
+}
+function updateFullscreenUI(){
+    const full=!!(document.fullscreenElement||document.webkitFullscreenElement||document.mozFullScreenElement||document.msFullscreenElement);
+    document.querySelectorAll('.btn-fullscreen-toggle').forEach(b=>{
+        b.innerText=full?'フルスクリーンを解除':'フルスクリーンにする';
+        b.style.borderColor=full?'#ff4d4d':'#00f2ff'; b.style.color=full?'#ff4d4d':'#00f2ff';
     });
+    setTimeout(resize,300);
+}
+['fullscreenchange','webkitfullscreenchange','mozfullscreenchange','MSFullscreenChange'].forEach(ev=>document.addEventListener(ev,updateFullscreenUI));
 
-    // --- Original Logic (描画・更新) ---
-    function gameLoop() {
-        update(); draw();
-        requestAnimationFrame(gameLoop);
+function createControls(mode){
+    const L=document.getElementById('left-panel'),R=document.getElementById('right-panel');
+    L.innerHTML='';R.innerHTML='';
+    const joy=`<div class="joystick-base" id="joystick-base"><div class="joystick-thumb" id="joystick-thumb"></div></div>`;
+    const act=`<div class="btn-action" id="btn-action">FIRE</div>`;
+    if(mode===1){L.innerHTML=joy;R.innerHTML=act;}else{L.innerHTML=act;R.innerHTML=joy;}
+    setupJoystick(); setupActionBtn();
+}
+function setupJoystick(){
+    const base=document.getElementById('joystick-base'),thumb=document.getElementById('joystick-thumb');
+    if(!base||!thumb)return;
+    base.addEventListener('pointerdown',e=>{
+        e.preventDefault();
+        const r=base.getBoundingClientRect();
+        joystick.originX=r.left+r.width/2;joystick.originY=r.top+r.height/2;
+        joystick.active=true;joystick.pointerId=e.pointerId;
+    });
+    window.addEventListener('pointermove',e=>{
+        if(!joystick.active||e.pointerId!==joystick.pointerId)return;
+        let dx=e.clientX-joystick.originX,dy=e.clientY-joystick.originY;
+        const d=Math.hypot(dx,dy);
+        if(d>joystick.maxRadius){dx=dx/d*joystick.maxRadius;dy=dy/d*joystick.maxRadius;}
+        joystick.vectorX=dx/joystick.maxRadius;joystick.vectorY=dy/joystick.maxRadius;
+        thumb.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
+    });
+    const end=e=>{if(e&&e.pointerId!==joystick.pointerId)return;joystick.active=false;joystick.vectorX=0;joystick.vectorY=0;thumb.style.transform='translate(-50%,-50%)';};
+    window.addEventListener('pointerup',end);window.addEventListener('pointercancel',end);
+}
+function setupActionBtn(){
+    const btn=document.getElementById('btn-action');
+    if(!btn)return;
+    btn.addEventListener('pointerdown',e=>{e.preventDefault();actionPressed=true;});
+    btn.addEventListener('pointerup',e=>{e.preventDefault();actionPressed=false;});
+    btn.addEventListener('pointerleave',e=>{e.preventDefault();actionPressed=false;});
+}
+
+window.addEventListener('keydown',e=>{
+    if(['ArrowUp','w'].includes(e.key))keys.up=true;
+    if(['ArrowDown','s'].includes(e.key))keys.down=true;
+    if(['ArrowLeft','a'].includes(e.key))keys.left=true;
+    if(['ArrowRight','d'].includes(e.key))keys.right=true;
+    if([' ','Enter'].includes(e.key))actionPressed=true;
+});
+window.addEventListener('keyup',e=>{
+    if(['ArrowUp','w'].includes(e.key))keys.up=false;
+    if(['ArrowDown','s'].includes(e.key))keys.down=false;
+    if(['ArrowLeft','a'].includes(e.key))keys.left=false;
+    if(['ArrowRight','d'].includes(e.key))keys.right=false;
+    if([' ','Enter'].includes(e.key))actionPressed=false;
+});
+
+function spawnEnemy(){
+    if(gameState!=='playing')return;
+    const type=enemyTypes[Math.floor(Math.random()*enemyTypes.length)];
+    let x,y;
+    const s=Math.floor(Math.random()*4);
+    if(s===0){x=Math.random()*canvas.width;y=-50;}
+    else if(s===1){x=Math.random()*canvas.width;y=canvas.height+50;}
+    else if(s===2){x=-50;y=Math.random()*canvas.height;}
+    else{x=canvas.width+50;y=Math.random()*canvas.height;}
+    const a=Math.atan2(canvas.height/2-y,canvas.width/2-x)+(Math.random()-.5)*.4;
+    enemies.push({x,y,vx:Math.cos(a)*type.speed,vy:Math.sin(a)*type.speed,...type});
+}
+
+function startGame(mode){
+    gameMode=mode;gameState='playing';
+    score=0;timeLeft=30;missCount=0;overheatCount=0;
+    sounds.bgm.currentTime=0;sounds.bgm.play().catch(()=>{});
+    if(spawnId)clearInterval(spawnId);
+    if(timerId)clearInterval(timerId);
+    if(rafId)cancelAnimationFrame(rafId);
+    particles.length=0;enemies.length=0;bullets.length=0;
+    player.x=canvas.width/2;player.y=canvas.height/2;
+    player.heat=0;player.isOverheated=false;
+    timerEl.innerText=timeLeft;scoreEl.innerText=0;
+    bestEl.innerText=localStorage.getItem('bestScore_mode'+mode)||0;
+    document.getElementById('screen-title').style.display='none';
+    createControls(mode);resize();
+    spawnId=setInterval(spawnEnemy,750);
+    timerId=setInterval(()=>{
+        if(gameState==='gameover')return;
+        timeLeft--;timerEl.innerText=timeLeft;
+        if(timeLeft<=0)endGame();
+    },1000);
+    rafId=requestAnimationFrame(gameLoop);
+}
+
+function endGame(){
+    gameState='gameover';sounds.bgm.pause();
+    finalScoreEl.innerText=score;finalOverheatEl.innerText=overheatCount;
+    if(isCollisionEnabled){document.getElementById('miss-stat').style.display='flex';finalMissEl.innerText=missCount;}
+    else{document.getElementById('miss-stat').style.display='none';}
+    if(spawnId)clearInterval(spawnId);
+    if(timerId)clearInterval(timerId);
+    const best=parseInt(localStorage.getItem('bestScore_mode'+gameMode))||0;
+    if(score>best){localStorage.setItem('bestScore_mode'+gameMode,score);newRecordEl.style.display='block';}
+    else{newRecordEl.style.display='none';}
+    if(window._firebaseReady&&score>0){window._openNicknameModal(score,gameMode,isCollisionEnabled);}
+    else{window._showResult();}
+}
+
+function update(){
+    stars.forEach(s=>{s.opacity+=s.speed;if(s.opacity>1||s.opacity<.1)s.speed*=-1;});
+    if(gameState==='hit'||gameState==='gameover'){
+        particles.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;p.life-=.035;if(p.life<=0)particles.splice(i,1);});return;
+    }
+    if(gameState!=='playing')return;
+
+    if(player.isOverheated){player.heat-=player.overheatCoolDownRate;if(player.heat<=5){player.heat=0;player.isOverheated=false;}}
+    else if(!actionPressed){player.heat=Math.max(0,player.heat-player.coolDownRate);}
+    heatBarEl.style.width=player.heat+'%';
+    heatBarEl.style.background=player.isOverheated?'var(--danger-color)':(player.heat>70?'#ffeb3b':'var(--heat-color)');
+    heatWarnEl.style.visibility=player.isOverheated?'visible':'hidden';
+
+    let ix=joystick.vectorX,iy=joystick.vectorY;
+    if(!joystick.active){
+        if(keys.left)ix=-1;if(keys.right)ix=1;if(keys.up)iy=-1;if(keys.down)iy=1;
+        if(ix!==0&&iy!==0){ix*=.707;iy*=.707;}
+    }
+    player.x+=ix*player.baseSpeed;player.y+=iy*player.baseSpeed;
+    player.x=Math.max(player.radius,Math.min(canvas.width-player.radius,player.x));
+    player.y=Math.max(player.radius,Math.min(canvas.height-player.radius,player.y));
+    if(Math.hypot(ix,iy)>.1)player.angle=Math.atan2(iy,ix);
+
+    if(actionPressed){
+        const now=Date.now();
+        if(!player.isOverheated&&now-player.lastFireTime>=player.fireInterval){
+            bullets.push({x:player.x+Math.cos(player.angle)*20,y:player.y+Math.sin(player.angle)*20,vx:Math.cos(player.angle)*11,vy:Math.sin(player.angle)*11});
+            player.lastFireTime=now;player.heat+=player.heatIncreasePerShot;
+            playSound(sounds.shoot);
+            if(player.heat>=100){player.heat=100;player.isOverheated=true;overheatCount++;}
+        }
     }
 
-    function update() {
-        if(gameState !== 'playing') return;
-        
-        // 移動
-        let iX = joystick.vectorX, iY = joystick.vectorY;
-        if(!joystick.active) {
-            if(keys.left) iX = -1; if(keys.right) iX = 1; if(keys.up) iY = -1; if(keys.down) iY = 1;
+    bullets.forEach((b,i)=>{b.x+=b.vx;b.y+=b.vy;if(b.x<0||b.x>canvas.width||b.y<0||b.y>canvas.height)bullets.splice(i,1);});
+    enemies.forEach((e,i)=>{
+        e.x+=e.vx;e.y+=e.vy;
+        if(isCollisionEnabled&&Math.hypot(e.x-player.x,e.y-player.y)<player.radius+e.size*.7){
+            gameState='hit';missCount++;playSound(sounds.playerDeath);
+            for(let k=0;k<25;k++)particles.push({x:player.x,y:player.y,vx:(Math.random()-.5)*7,vy:(Math.random()-.5)*7,life:1,color:player.color});
+            setTimeout(()=>{if(gameState!=='gameover'){gameState='playing';enemies.length=0;bullets.length=0;player.x=canvas.width/2;player.y=canvas.height/2;}},1000);return;
         }
-        player.x += iX * player.baseSpeed; player.y += iY * player.baseSpeed;
-        player.x = Math.max(20, Math.min(canvas.width-20, player.x));
-        player.y = Math.max(20, Math.min(canvas.height-20, player.y));
-        if(Math.hypot(iX, iY) > 0.1) player.angle = Math.atan2(iY, iX);
-
-        // 射撃 & 熱
-        if(actionPressed && !player.isOverheated) {
-            if(Math.random() < 0.3) {
-                bullets.push({x: player.x, y: player.y, vx: Math.cos(player.angle)*10, vy: Math.sin(player.angle)*10});
-                player.heat += 4; sounds.shoot.currentTime=0; sounds.shoot.play().catch(()=>{});
+        bullets.forEach((b,j)=>{
+            if(Math.hypot(e.x-b.x,e.y-b.y)<e.size){
+                score+=e.score;scoreEl.innerText=score;
+                if(e.type==='L')playSound(sounds.damageGreen);
+                else if(e.type==='M')playSound(sounds.damageYellow);
+                else playSound(sounds.damageRed);
+                for(let k=0;k<12;k++)particles.push({x:e.x,y:e.y,vx:(Math.random()-.5)*7,vy:(Math.random()-.5)*7,life:1,color:e.color});
+                enemies.splice(i,1);bullets.splice(j,1);
             }
-        }
-        if(player.heat >= 100) { player.heat=100; player.isOverheated=true; overheatCount++; }
-        player.heat = Math.max(0, player.heat - (player.isOverheated ? 0.5 : 1));
-        if(player.heat === 0) player.isOverheated = false;
-        document.getElementById('heat-bar').style.width = player.heat + '%';
-        document.getElementById('heat-warning').style.visibility = player.isOverheated ? 'visible' : 'hidden';
-
-        // 敵 & 弾
-        if(Math.random() < 0.05) enemies.push({x: Math.random()*canvas.width, y: -20, s: 30, v: 2+Math.random()*2});
-        bullets.forEach((b, bi) => {
-            b.x += b.vx; b.y += b.vy;
-            enemies.forEach((e, ei) => {
-                if(Math.hypot(b.x-e.x, b.y-e.y) < e.s) { score+=100; enemies.splice(ei,1); bullets.splice(bi,1); }
-            });
         });
-        enemies.forEach((e, ei) => {
-            e.y += e.v;
-            if(isCollisionEnabled && Math.hypot(player.x-e.x, player.y-e.y) < 30) { missCount++; enemies.splice(ei,1); sounds.death.play(); }
-        });
-        document.getElementById('score').innerText = score;
-    }
+        if(e.x<-100||e.x>canvas.width+100||e.y<-100||e.y>canvas.height+100)enemies.splice(i,1);
+    });
+    particles.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;p.life-=.035;if(p.life<=0)particles.splice(i,1);});
+}
 
-    function draw() {
-        ctx.fillStyle = '#050510'; ctx.fillRect(0,0,canvas.width,canvas.height);
-        stars.forEach(s => { s.y += s.v; if(s.y>canvas.height) s.y=0; ctx.fillStyle='white'; ctx.fillRect(s.x, s.y, s.s, s.s); });
-        
-        if(gameState === 'playing') {
-            // 自機デザイン復元
-            ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.angle);
-            ctx.fillStyle = player.isOverheated ? '#444' : player.color;
-            ctx.beginPath(); ctx.moveTo(20, 0); ctx.lineTo(-15, 15); ctx.lineTo(-10, 0); ctx.lineTo(-15, -15); ctx.closePath(); ctx.fill();
-            ctx.restore();
-        }
-        bullets.forEach(b => { ctx.fillStyle='yellow'; ctx.beginPath(); ctx.arc(b.x, b.y, 3, 0, Math.PI*2); ctx.fill(); });
-        enemies.forEach(e => { ctx.strokeStyle='red'; ctx.strokeRect(e.x-15, e.y-15, 30, 30); });
+function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    stars.forEach(s=>{ctx.globalAlpha=s.opacity;ctx.fillStyle=s.color;ctx.beginPath();ctx.arc(s.x,s.y,s.size,0,Math.PI*2);ctx.fill();});
+    ctx.globalAlpha=1.0;
+    bullets.forEach(b=>{ctx.beginPath();ctx.arc(b.x,b.y,4,0,Math.PI*2);ctx.fillStyle='#fff';ctx.shadowBlur=10;ctx.shadowColor='#0ff';ctx.fill();ctx.shadowBlur=0;});
+    enemies.forEach(e=>{ctx.save();ctx.translate(e.x,e.y);ctx.rotate(Math.atan2(e.vy,e.vx));ctx.fillStyle=e.color;ctx.beginPath();ctx.moveTo(e.size,0);ctx.lineTo(-e.size/2,e.size/2);ctx.lineTo(-e.size/2,-e.size/2);ctx.closePath();ctx.fill();ctx.restore();});
+    particles.forEach(p=>{ctx.globalAlpha=p.life;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,2,0,Math.PI*2);ctx.fill();});
+    ctx.globalAlpha=1.0;
+    if(gameState==='playing'||gameState==='hit'){
+        ctx.save();ctx.translate(player.x,player.y);ctx.rotate(player.angle);
+        if(!isCollisionEnabled){ctx.globalAlpha=.8;ctx.strokeStyle=player.color;ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,player.radius+5,0,Math.PI*2);ctx.stroke();}
+        ctx.fillStyle=player.isOverheated?'#444':player.color;
+        ctx.beginPath();ctx.moveTo(player.radius,0);ctx.lineTo(-player.radius,player.radius);ctx.lineTo(-player.radius/2,0);ctx.lineTo(-player.radius,-player.radius);ctx.closePath();
+        if(!player.isOverheated){ctx.shadowBlur=isCollisionEnabled?15:25;ctx.shadowColor=player.color;}
+        ctx.fill();ctx.restore();
     }
+}
 
-    function toggleCollision() {
-        isCollisionEnabled = !isCollisionEnabled;
-        document.getElementById('collision-toggle').innerText = isCollisionEnabled ? "⚠️ ON (危険)" : "🛡️ OFF (安全)";
-        document.getElementById('collision-toggle').classList.toggle('active', isCollisionEnabled);
-    }
+function gameLoop(){update();draw();if(gameState!=='gameover')rafId=requestAnimationFrame(gameLoop);}
 
-    function setupControls() {
-        const l = document.getElementById('left-panel'), r = document.getElementById('right-panel');
-        const joyHTML = '<div class="joystick-base" id="joy-b"><div class="joystick-thumb" id="joy-t"></div></div>';
-        const fireHTML = '<div class="fire-button" id="fire-b">FIRE</div>';
-        if(gameMode===1) { l.innerHTML=joyHTML; r.innerHTML=fireHTML; } else { l.innerHTML=fireHTML; r.innerHTML=joyHTML; }
-        
-        const b = document.getElementById('joy-b');
-        if(b) b.onpointerdown = (e) => { 
-            joystick.active = true; joystick.pointerId = e.pointerId;
-            const rect = b.getBoundingClientRect();
-            joystick.originX = rect.left + rect.width/2; joystick.originY = rect.top + rect.height/2;
-        };
-        window.onpointermove = (e) => {
-            if(!joystick.active) return;
-            let dx = e.clientX - joystick.originX, dy = e.clientY - joystick.originY;
-            let dist = Math.hypot(dx, dy);
-            if(dist > joystick.maxRadius) { dx *= joystick.maxRadius/dist; dy *= joystick.maxRadius/dist; }
-            joystick.vectorX = dx/joystick.maxRadius; joystick.vectorY = dy/joystick.maxRadius;
-            document.getElementById('joy-t').style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-        };
-        window.onpointerup = () => { joystick.active = false; joystick.vectorX=0; joystick.vectorY=0; if(document.getElementById('joy-t')) document.getElementById('joy-t').style.transform='translate(-50%,-50%)'; };
-        
-        const f = document.getElementById('fire-b');
-        if(f) { f.onpointerdown = () => actionPressed = true; f.onpointerup = () => actionPressed = false; }
-    }
+window.onload=()=>{ resize();updateFullscreenUI();window.scrollTo(0,1); };
 </script>
 </body>
 </html>
