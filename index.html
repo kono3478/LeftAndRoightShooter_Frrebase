@@ -221,9 +221,11 @@ const db  = getDatabase(app);
 
 // ---------- score submission ----------
 let pendingScore = 0, pendingMode = 1, pendingCollision = false;
+let pendingOverheat = 0, pendingMiss = 0;
 
-window._openNicknameModal = (sc, mode, collision) => {
+window._openNicknameModal = (sc, mode, collision, overheat, miss) => {
     pendingScore=sc; pendingMode=mode; pendingCollision=!!collision;
+    pendingOverheat=overheat||0; pendingMiss=miss||0;
     document.getElementById('modal-score').textContent = Number(sc).toLocaleString();
     document.getElementById('nickname-input').value = localStorage.getItem('lastNickname')||'';
     document.getElementById('uploading-msg').textContent = '';
@@ -245,6 +247,7 @@ window.submitScore = async () => {
         await push(ref(db,`scores/mode${pendingMode}`), {
             nickname: nick.slice(0,12), score: pendingScore,
             mode: pendingMode, collisionEnabled: pendingCollision,
+            overheatCount: pendingOverheat, missCount: pendingMiss,
             timestamp: serverTimestamp()
         });
         localStorage.setItem('lastNickname', nick);
@@ -449,7 +452,7 @@ function endGame(){
     const best=parseInt(localStorage.getItem('bestScore_mode'+gameMode))||0;
     if(score>best){localStorage.setItem('bestScore_mode'+gameMode,score);newRecordEl.style.display='block';}
     else{newRecordEl.style.display='none';}
-    if(window._firebaseReady&&score>0){window._openNicknameModal(score,gameMode,isCollisionEnabled);}
+    if(window._firebaseReady&&score>0){window._openNicknameModal(score,gameMode,isCollisionEnabled,overheatCount,missCount);}
     else{window._showResult();}
 }
 
