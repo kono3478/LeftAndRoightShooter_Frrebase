@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>スペース・ディフェンダー - Firebase Edition</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -14,9 +16,9 @@
             --text-color: #ffffff; --accent-color: #00f2ff; --heat-color: #ff9f43;
             --danger-color: #ff4d4d; --panel-border: #999;
         }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: var(--bg-color); font-family: sans-serif; user-select: none; touch-action: none; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; height: 100dvh; overflow: hidden; background-color: var(--bg-color); font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; user-select: none; touch-action: none; -webkit-user-select: none; }
         
-        /* ID入力画面 */
+        /* 追加：ID入力用オーバーレイ */
         #id-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: radial-gradient(circle at center, #1b1b2f 0%, #020205 100%);
@@ -26,66 +28,124 @@
             background: rgba(255, 255, 255, 0.07); border: 2px solid var(--accent-color);
             padding: 40px; border-radius: 24px; backdrop-filter: blur(10px); text-align: center;
         }
+        .id-box h2 { color: var(--accent-color); margin-top: 0; letter-spacing: 2px; }
         .id-box input {
             font-size: 32px; width: 160px; text-align: center; margin: 20px 0;
             background: #000; color: var(--accent-color); border: 1px solid var(--accent-color);
             border-radius: 8px; outline: none;
         }
 
-        #game-container { position: relative; width: 100vw; height: 100dvh; display: flex; flex-direction: row; }
-        #screen-title { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #1b1b2f 0%, #020205 100%); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 100; }
-        .btn-mode { width: 280px; padding: 18px; margin: 8px 0; background: rgba(0, 242, 255, 0.1); border: 1px solid var(--accent-color); border-radius: 14px; color: white; font-weight: bold; cursor: pointer; }
+        #game-container { position: relative; width: 100vw; height: 100%; height: 100dvh; display: flex; flex-direction: row; overflow: hidden; }
+        #orientation-warning { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f3460; color: white; display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; text-align: center; padding: 20px; }
+        @media (orientation: portrait) { #orientation-warning { display: flex; } }
         
-        .control-panel { width: 220px; height: 100%; background-color: var(--panel-color); position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 4px solid var(--panel-border); box-sizing: border-box; z-index: 10; }
+        #screen-title { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #1b1b2f 0%, #020205 100%); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 100; transition: opacity 0.5s; padding: 20px; box-sizing: border-box; overflow-y: auto; }
+        .title-header { text-align: center; margin-bottom: 40px; flex-shrink: 0; }
+        #screen-title h1 { color: var(--accent-color); margin: 0 0 20px 0; font-size: clamp(28px, 8vw, 56px); letter-spacing: 10px; text-shadow: 0 0 25px rgba(0, 242, 255, 0.6); }
+        .menu-layout { display: flex; flex-direction: row; justify-content: center; align-items: stretch; gap: 30px; width: 100%; max-width: 900px; flex-shrink: 0; }
+        .menu-section { flex: 1; background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 24px; padding: 25px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; backdrop-filter: blur(10px); }
+        .section-title { color: #ccc; font-size: 14px; font-weight: bold; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid rgba(0, 242, 255, 0.3); padding-bottom: 5px; width: 100%; text-align: center; }
+        .btn-mode { width: 100%; padding: 18px 20px; margin: 8px 0; background: linear-gradient(135deg, rgba(0, 242, 255, 0.1), rgba(0, 242, 255, 0.05)); border: 1px solid rgba(0, 242, 255, 0.4); border-radius: 14px; color: white; font-weight: bold; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); text-transform: uppercase; letter-spacing: 1px; }
+        .btn-mode:active { transform: scale(0.96); background: rgba(0, 242, 255, 0.3); }
+        .settings-container { display: flex; flex-direction: column; align-items: center; width: 100%; gap: 15px; }
+        .toggle-btn { background: rgba(0,0,0,0.3); border: 1px solid #555; border-radius: 12px; padding: 12px 20px; color: #fff; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.3s; }
+        .toggle-btn.active { border-color: var(--danger-color); box-shadow: 0 0 15px rgba(255, 77, 77, 0.2); }
+        .btn-fullscreen-toggle { background: rgba(255,255,255,0.1); border: 1px solid #444; color: #aaa; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 12px; margin-top: 10px; }
+        
+        .control-panel { width: 220px; height: 100%; background-color: var(--panel-color); position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 4px solid var(--panel-border); box-sizing: border-box; z-index: 10; box-shadow: inset 0 0 40px rgba(0,0,0,0.2); }
+        #left-panel { border-right: 10px solid #777; border-radius: 0 10px 10px 0; }
+        #right-panel { border-left: 10px solid #777; border-radius: 10px 0 0 10px; }
         #game-field { flex-grow: 1; position: relative; background-color: var(--game-bg); overflow: hidden; }
         #gameCanvas { width: 100%; height: 100%; display: block; }
         
-        .joystick-container { position: relative; width: 150px; height: 150px; background: #ccc; border-radius: 50%; border: 6px solid #888; }
-        .joystick-knob { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70px; height: 70px; background: #222; border-radius: 50%; }
-        .fire-button { width: 120px; height: 120px; background: radial-gradient(circle, #ff4d4d, #900); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-weight: bold; font-size: 20px; box-shadow: 0 5px 0 #600; }
-        .fire-button:active { transform: translateY(3px); box-shadow: 0 2px 0 #600; }
+        .joystick-container { position: relative; width: 150px; height: 150px; background: #ccc; border-radius: 50%; border: 6px solid #888; box-shadow: inset 0 0 20px rgba(0,0,0,0.3), 0 5px 15px rgba(0,0,0,0.3); }
+        .joystick-knob { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70px; height: 70px; background: radial-gradient(circle at 30% 30%, #666, #222); border-radius: 50%; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        .fire-button { width: 120px; height: 120px; background: radial-gradient(circle at 30% 30%, #ff4d4d, #900); border-radius: 50%; border: 6px solid #600; box-shadow: 0 8px 0 #400, 0 15px 25px rgba(0,0,0,0.4); cursor: pointer; display: flex; justify-content: center; align-items: center; color: white; font-weight: 900; font-size: 24px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); transition: all 0.05s; }
+        .fire-button:active { transform: translateY(4px); box-shadow: 0 4px 0 #400, 0 8px 15px rgba(0,0,0,0.4); background: radial-gradient(circle at 30% 30%, #ff1a1a, #700); }
         
-        #hud { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); color: white; text-align: center; pointer-events: none; z-index: 20; font-weight: bold; }
-        #screen-result { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(5, 5, 20, 0.95); border: 2px solid var(--accent-color); padding: 30px; border-radius: 20px; color: white; text-align: center; display: none; z-index: 150; }
+        #hud { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; color: white; font-weight: bold; text-shadow: 0 0 10px rgba(0, 242, 255, 0.5); pointer-events: none; z-index: 20; }
+        #screen-result { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(5, 5, 20, 0.95); border: 2px solid var(--accent-color); padding: 30px 40px; border-radius: 20px; color: white; text-align: center; display: none; z-index: 150; box-shadow: 0 0 50px rgba(0, 242, 255, 0.2); min-width: 320px; }
     </style>
 </head>
 <body>
 
 <div id="id-overlay">
     <div class="id-box">
-        <h2 style="color: white;">PLAYER ENTRY</h2>
-        <input type="number" id="player-id-input" placeholder="0000" oninput="if(this.value.length > 4) this.value = this.value.slice(0, 4);">
+        <h2>PLAYER ACCESS</h2>
+        <p style="color: #bbb;">4桁の数字IDを入力してください</p>
+        <input type="text" id="player-id-input" maxlength="4" placeholder="0000">
         <br>
-        <button class="btn-mode" onclick="verifyID()">ENTRY</button>
+        <button class="btn-mode" onclick="verifyID()">ENTRY SYSTEM</button>
     </div>
 </div>
 
+<div id="orientation-warning">
+    <div style="width: 50px; height: 35px; border: 2px solid white; border-radius: 4px; margin-bottom: 20px;"></div>
+    <h2>画面を横向きにしてください</h2>
+    <button class="btn-fullscreen-toggle" onclick="toggleFullScreen()">フルスクリーンにする</button>
+</div>
+
 <div id="screen-title">
-    <h1 style="color: var(--accent-color); letter-spacing: 5px; font-size: 40px; margin-bottom: 30px;">SPACE DEFENDER</h1>
-    <button class="btn-mode" onclick="startGame(1)">MODE 1 (L:STICK / R:FIRE)</button>
-    <button class="btn-mode" onclick="startGame(2)">MODE 2 (R:STICK / L:FIRE)</button>
-    <button id="collision-toggle" class="btn-mode" onclick="toggleCollision()" style="font-size: 14px; width: 220px; margin-top: 20px;">🛡️ Collision: OFF</button>
+    <div class="title-header">
+        <h1>SPACE DEFENDER</h1>
+        <button id="title-fullscreen-btn" class="btn-fullscreen-toggle" onclick="toggleFullScreen()">フルスクリーンにする</button>
+    </div>
+    <div class="menu-layout">
+        <div class="menu-section">
+            <div class="section-title">操作モード選択</div>
+            <button class="btn-mode" onclick="startGame(1)">MODE 1 (左スティック / 右FIRE)</button>
+            <button class="btn-mode" onclick="startGame(2)">MODE 2 (右スティック / 左FIRE)</button>
+        </div>
+        <div class="menu-section">
+            <div class="section-title">システム設定</div>
+            <div class="settings-container">
+                <p style="color: #bbb; font-size: 12px; margin: 0;">自機の当たり判定</p>
+                <button id="collision-toggle" class="toggle-btn" onclick="toggleCollision()">
+                    <span id="toggle-icon">🛡️</span>
+                    <span id="toggle-text">OFF (安全)</span>
+                </button>
+                <p style="color: #888; font-size: 11px; text-align: center; margin-top: 10px;">ONにすると敵に接触した際に<br>爆発ペナルティが発生します。</p>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div id="game-container">
     <div id="left-panel" class="control-panel"></div>
     <div id="game-field">
         <div id="hud">
-            <div style="font-size: 20px; margin-bottom: 5px;">TIME: <span id="timer">30</span> | SCORE: <span id="score">0</span></div>
-            <div id="heat-warning" style="color: var(--danger-color); visibility: hidden; font-size: 14px;">OVERHEAT!</div>
+            <div style="display: flex; gap: 25px; font-size: 18px;">
+                <div>TIME: <span id="timer">30</span>s</div>
+                <div>SCORE: <span id="score">0</span></div>
+                <div style="color: var(--accent-color)">BEST: <span id="best-score">0</span></div>
+            </div>
+            <div style="width: 220px; height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; overflow: hidden; margin-top: 5px;">
+                <div id="heat-bar" style="width: 0%; height: 100%; background: var(--heat-color); transition: background 0.2s;"></div>
+            </div>
+            <div id="heat-warning" style="color: var(--danger-color); font-size: 12px; height: 15px; text-transform: uppercase; visibility: hidden; font-weight: 900;">OVERHEATED!</div>
         </div>
         <canvas id="gameCanvas"></canvas>
         <div id="screen-result">
-            <h2 style="color: var(--accent-color);">MISSION COMPLETE</h2>
-            <div id="final-score" style="font-size: 60px; margin: 20px;">0</div>
-            <button class="btn-mode" onclick="location.reload()">TITLE</button>
+            <h2 style="color: var(--accent-color); margin-top: 0;">MISSION COMPLETE</h2>
+            <div id="final-score" style="font-size: 64px; margin: 10px 0; font-weight: bold; line-height: 1;">0</div>
+            <div class="result-stats" style="display: flex; justify-content: center; gap: 30px; margin: 20px 0; padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 12px;">
+                <div id="miss-stat" style="display: none; flex-direction: column; gap: 5px;">
+                    <span style="font-size: 12px; color: #889;">MISS (衝突)</span>
+                    <span id="final-miss" style="font-size: 24px; font-weight: bold; color: var(--danger-color);">0</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    <span style="font-size: 12px; color: #889;">OVERHEAT</span>
+                    <span id="final-overheat" style="font-size: 24px; font-weight: bold; color: var(--heat-color);">0</span>
+                </div>
+            </div>
+            <button class="btn-mode" style="width: 100%; max-width: none;" onclick="location.reload()">タイトルへ戻る</button>
         </div>
     </div>
     <div id="right-panel" class="control-panel"></div>
 </div>
 
 <script>
-    // --- Firebase Config ---
+    // --- Firebase設定 ---
     const firebaseConfig = {
         apiKey: "AIzaSyAWUDUE9GklRNJGg0OoaZrBDn4C91VEEEI",
         authDomain: "leftandroightshooter.firebaseapp.com",
@@ -99,240 +159,213 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // --- Variables ---
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+    // --- 追加：ID検証 ---
     let playerID = "";
-    let gameStage = 0; // 0: Title, 1: Playing, 2: Result
-    let score = 0, timeLeft = 30, timerInterval;
-    let ship = { x: 0, y: 0, targetX: 0, targetY: 0, size: 40 };
-    let enemies = [], bullets = [], particles = [];
-    let heat = 0, isOverheated = false, isHitDetectionEnabled = false, currentMode = 1;
-    let joystick = { active: false, startX: 0, startY: 0, angle: 0, distance: 0, maxDist: 40 };
-    let firePressed = false;
-
     function verifyID() {
         const input = document.getElementById('player-id-input');
-        if (input.value.length === 4) {
+        if (input.value.length === 4 && !isNaN(input.value)) {
             playerID = input.value;
             document.getElementById('id-overlay').style.display = 'none';
             document.getElementById('screen-title').style.display = 'flex';
-            resize();
-        } else { alert("4桁の数字を入力してください"); }
+            init(); // 描画開始
+        } else {
+            alert("数字4桁を正しく入力してください");
+        }
+    }
+
+    // --- 以降、元のゲームロジックを忠実に維持 ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(freq, type, duration, vol) {
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + duration);
+    }
+
+    const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d');
+    let gameStage = 0; let score = 0; let bestScore = localStorage.getItem('sd_best') || 0;
+    let timeLeft = 30; let timerInterval; let isHitDetectionEnabled = false;
+    let currentMode = 1; let heat = 0; let isOverheated = false;
+    let overheatCount = 0; let missCount = 0;
+
+    let ship = { x: 0, y: 0, targetX: 0, targetY: 0, size: 40, color: '#00f2ff' };
+    let enemies = []; let bullets = []; let particles = []; let stars = [];
+    let joystick = { active: false, startX: 0, startY: 0, angle: 0, distance: 0, maxDist: 40 };
+    let firePressed = false;
+
+    function init() {
+        document.getElementById('best-score').innerText = bestScore;
+        resize(); window.addEventListener('resize', resize);
+        for(let i=0; i<100; i++) stars.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, s:Math.random()*2, v:0.5+Math.random()*2});
+        setupControls();
+        requestAnimationFrame(gameLoop);
     }
 
     function toggleCollision() {
         isHitDetectionEnabled = !isHitDetectionEnabled;
-        document.getElementById('collision-toggle').innerText = isHitDetectionEnabled ? "⚠️ Collision: ON" : "🛡️ Collision: OFF";
+        const btn = document.getElementById('collision-toggle');
+        btn.classList.toggle('active', isHitDetectionEnabled);
+        document.getElementById('toggle-text').innerText = isHitDetectionEnabled ? "ON (デンジャー)" : "OFF (安全)";
+        document.getElementById('toggle-icon').innerText = isHitDetectionEnabled ? "⚠️" : "🛡️";
     }
 
     function resize() {
         const rect = document.getElementById('game-field').getBoundingClientRect();
-        canvas.width = rect.width;
-        canvas.height = rect.height;
-        ship.x = ship.targetX = canvas.width / 2;
-        ship.y = ship.targetY = canvas.height * 0.8;
+        canvas.width = rect.width; canvas.height = rect.height;
+        ship.x = ship.targetX = canvas.width/2; ship.y = ship.targetY = canvas.height*0.8;
     }
 
     function setupControls() {
-        const l = document.getElementById('left-panel'), r = document.getElementById('right-panel');
-        l.innerHTML = ''; r.innerHTML = '';
+        const l = document.getElementById('left-panel'); const r = document.getElementById('right-panel');
+        l.innerHTML = r.innerHTML = '';
         const joyHTML = '<div class="joystick-container" id="joy-base"><div class="joystick-knob" id="joy-knob"></div></div>';
         const fireHTML = '<div class="fire-button" id="fire-btn">FIRE</div>';
-        
-        if(currentMode === 1) { l.innerHTML = joyHTML; r.innerHTML = fireHTML; }
-        else { l.innerHTML = fireHTML; r.innerHTML = joyHTML; }
+        if(currentMode===1) { l.innerHTML = joyHTML; r.innerHTML = fireHTML; } else { l.innerHTML = fireHTML; r.innerHTML = joyHTML; }
 
-        const joyBase = document.getElementById('joy-base');
-        const fireBtn = document.getElementById('fire-btn');
-
-        const startJoy = (e) => {
-            joystick.active = true;
-            const rect = joyBase.getBoundingClientRect();
-            joystick.startX = rect.left + rect.width/2;
-            joystick.startY = rect.top + rect.height/2;
-            moveJoy(e);
-        };
-        const moveJoy = (e) => {
+        const jBase = document.getElementById('joy-base');
+        const fBtn = document.getElementById('fire-btn');
+        const move = (e) => {
             if(!joystick.active) return;
             const t = e.touches ? e.touches[0] : e;
-            const dx = t.clientX - joystick.startX, dy = t.clientY - joystick.startY;
+            const dx = t.clientX - joystick.startX; const dy = t.clientY - joystick.startY;
             joystick.distance = Math.min(Math.sqrt(dx*dx + dy*dy), joystick.maxDist);
             joystick.angle = Math.atan2(dy, dx);
-            const knob = document.getElementById('joy-knob');
-            if(knob) knob.style.transform = `translate(calc(-50% + ${Math.cos(joystick.angle)*joystick.distance}px), calc(-50% + ${Math.sin(joystick.angle)*joystick.distance}px))`;
+            document.getElementById('joy-knob').style.transform = `translate(calc(-50% + ${Math.cos(joystick.angle)*joystick.distance}px), calc(-50% + ${Math.sin(joystick.angle)*joystick.distance}px))`;
         };
-        const endJoy = () => {
-            joystick.active = false;
-            const knob = document.getElementById('joy-knob');
-            if(knob) knob.style.transform = 'translate(-50%, -50%)';
+        const end = () => { joystick.active = false; document.getElementById('joy-knob').style.transform = 'translate(-50%, -50%)'; };
+        jBase.onmousedown = jBase.ontouchstart = (e) => {
+            joystick.active = true; const rect = jBase.getBoundingClientRect();
+            joystick.startX = rect.left + rect.width/2; joystick.startY = rect.top + rect.height/2;
+            if(e.type==='touchstart') e.preventDefault();
         };
-
-        joyBase.addEventListener('mousedown', startJoy);
-        joyBase.addEventListener('touchstart', startJoy, {passive: false});
-        window.addEventListener('mousemove', moveJoy);
-        window.addEventListener('touchmove', moveJoy, {passive: false});
-        window.addEventListener('mouseup', endJoy);
-        window.addEventListener('touchend', endJoy);
-
-        fireBtn.addEventListener('mousedown', () => firePressed = true);
-        fireBtn.addEventListener('touchstart', (e) => { e.preventDefault(); firePressed = true; });
+        window.addEventListener('mousemove', move); window.addEventListener('touchmove', move, {passive:false});
+        window.addEventListener('mouseup', end); window.addEventListener('touchend', end);
+        fBtn.onmousedown = fBtn.ontouchstart = (e) => { firePressed = true; if(e.type==='touchstart') e.preventDefault(); };
         window.addEventListener('mouseup', () => firePressed = false);
         window.addEventListener('touchend', () => firePressed = false);
     }
 
     function startGame(mode) {
-        currentMode = mode;
-        setupControls();
-        resize();
-        gameStage = 1; score = 0; timeLeft = 30; heat = 0; isOverheated = false;
-        enemies = []; bullets = []; particles = [];
+        currentMode = mode; setupControls(); gameStage = 1; score = 0; timeLeft = 30; heat = 0;
+        enemies = []; bullets = []; overheatCount = 0; missCount = 0;
         document.getElementById('screen-title').style.display = 'none';
-        document.getElementById('screen-result').style.display = 'none';
-        
-        if(timerInterval) clearInterval(timerInterval);
         timerInterval = setInterval(() => {
-            timeLeft--;
-            document.getElementById('timer').innerText = timeLeft;
-            if(timeLeft <= 0) finishGame();
+            timeLeft--; document.getElementById('timer').innerText = timeLeft;
+            if(timeLeft<=0) finishGame();
         }, 1000);
-
-        requestAnimationFrame(gameLoop);
     }
 
     function finishGame() {
-        clearInterval(timerInterval);
-        gameStage = 2;
+        clearInterval(timerInterval); gameStage = 2;
         document.getElementById('screen-result').style.display = 'block';
         document.getElementById('final-score').innerText = score;
+        document.getElementById('final-overheat').innerText = overheatCount;
+        document.getElementById('miss-stat').style.display = isHitDetectionEnabled ? 'flex' : 'none';
+        document.getElementById('final-miss').innerText = missCount;
+        if(score > bestScore) { bestScore = score; localStorage.setItem('sd_best', score); }
+
+        // Firebase保存
         db.ref('scores').push({
-            id: playerID, mode: "MODE "+currentMode, 
-            collision: isHitDetectionEnabled?"ON":"OFF", 
-            score: score, date: new Date().toLocaleString()
+            id: playerID, mode: "MODE "+currentMode,
+            collision: isHitDetectionEnabled ? "ON" : "OFF",
+            score: score, overheats: overheatCount, misses: missCount,
+            date: new Date().toLocaleString()
         });
     }
 
     function gameLoop() {
-        if(gameStage !== 1) return;
-        update();
+        ctx.fillStyle = '#050510'; ctx.fillRect(0,0,canvas.width,canvas.height);
+        stars.forEach(s => { s.y += s.v; if(s.y>canvas.height) s.y=-10; ctx.fillStyle='white'; ctx.fillRect(s.x, s.y, s.s, s.s); });
+        if(gameStage === 1) {
+            update();
+        }
         draw();
         requestAnimationFrame(gameLoop);
     }
 
     function update() {
-        // 自機移動
         if(joystick.active) {
             ship.targetX += Math.cos(joystick.angle) * joystick.distance * 0.2;
             ship.targetY += Math.sin(joystick.angle) * joystick.distance * 0.2;
         }
         ship.targetX = Math.max(20, Math.min(canvas.width-20, ship.targetX));
         ship.targetY = Math.max(20, Math.min(canvas.height-20, ship.targetY));
-        ship.x += (ship.targetX - ship.x) * 0.2;
-        ship.y += (ship.targetY - ship.y) * 0.2;
+        ship.x += (ship.targetX - ship.x) * 0.2; ship.y += (ship.targetY - ship.y) * 0.2;
 
-        // 弾道
-        if(firePressed && !isOverheated && Math.random() < 0.25) {
-            bullets.push({ x: ship.x, y: ship.y - 20 });
-            heat += 3.5;
+        if(firePressed && !isOverheated && Math.random()<0.3) {
+            bullets.push({x:ship.x, y:ship.y-20, v:12}); heat += 2.5;
+            playSound(600, 'sine', 0.05, 0.02);
         }
-        heat = Math.max(0, heat - (isOverheated ? 0.4 : 1.2));
-        if(heat >= 100) { heat = 100; isOverheated = true; }
-        if(heat === 0) isOverheated = false;
+        if(heat>=100) { isOverheated=true; overheatCount++; playSound(150, 'sawtooth', 0.3, 0.05); }
+        heat = Math.max(0, heat - (isOverheated ? 0.6 : 1.2));
+        if(heat===0) isOverheated=false;
+        document.getElementById('heat-bar').style.width = heat+'%';
         document.getElementById('heat-warning').style.visibility = isOverheated ? 'visible' : 'hidden';
 
-        // 敵出現
-        if(Math.random() < 0.06) {
-            enemies.push({ x: Math.random()*canvas.width, y: -50, size: 30 + Math.random()*30, speed: 2 + Math.random()*2 });
+        if(Math.random()<0.05) {
+            enemies.push({x:Math.random()*canvas.width, y:-50, s:30+Math.random()*30, hp:2, v:2+Math.random()*2});
         }
 
-        // 判定処理
         bullets.forEach((b, bi) => {
-            b.y -= 12;
-            if(b.y < -20) bullets.splice(bi, 1);
+            b.y -= b.v; if(b.y<-20) bullets.splice(bi,1);
             enemies.forEach((e, ei) => {
-                if(Math.hypot(b.x - e.x, b.y - e.y) < e.size/2) {
-                    bullets.splice(bi, 1);
-                    score += 100;
-                    enemies.splice(ei, 1);
+                if(Math.hypot(b.x-e.x, b.y-e.y) < e.s/2) {
+                    bullets.splice(bi,1); e.hp--;
+                    if(e.hp<=0) {
+                        score += Math.floor(e.s*10); enemies.splice(ei,1);
+                        playSound(200, 'sine', 0.1, 0.05);
+                        for(let i=0; i<10; i++) particles.push({x:e.x, y:e.y, vx:(Math.random()-0.5)*10, vy:(Math.random()-0.5)*10, l:1, c:ship.color});
+                    }
                 }
             });
         });
 
         enemies.forEach((e, ei) => {
-            e.y += e.speed;
-            if(e.y > canvas.height + 50) enemies.splice(ei, 1);
-            if(isHitDetectionEnabled && Math.hypot(ship.x - e.x, ship.y - e.y) < 30) {
-                score = Math.max(0, score - 5);
+            e.y += e.v; if(e.y>canvas.height+50) enemies.splice(ei,1);
+            if(isHitDetectionEnabled && Math.hypot(ship.x-e.x, ship.y-e.y) < 30) {
+                missCount++; score = Math.max(0, score-500); enemies.splice(ei,1);
+                playSound(100, 'square', 0.2, 0.1);
             }
         });
+
+        particles.forEach((p, i) => { p.x+=p.vx; p.y+=p.vy; p.l-=0.03; if(p.l<=0) particles.splice(i,1); });
         document.getElementById('score').innerText = score;
     }
 
     function draw() {
-        // 背景クリア
-        ctx.fillStyle = '#050510';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // 弾
-        ctx.fillStyle = '#ff0';
-        bullets.forEach(b => {
-            ctx.beginPath();
-            ctx.arc(b.x, b.y, 3, 0, Math.PI*2);
-            ctx.fill();
-        });
-
-        // 敵
+        bullets.forEach(b => { ctx.fillStyle='#ff0'; ctx.fillRect(b.x-2, b.y-10, 4, 15); });
         enemies.forEach(e => {
-            ctx.strokeStyle = '#ff4d4d';
-            ctx.lineWidth = 3;
-            ctx.strokeRect(e.x - e.size/2, e.y - e.size/2, e.size, e.size);
-            ctx.fillStyle = 'rgba(255, 77, 77, 0.2)';
-            ctx.fillRect(e.x - e.size/2, e.y - e.size/2, e.size, e.size);
+            ctx.strokeStyle='#ff4d4d'; ctx.lineWidth=3; ctx.strokeRect(e.x-e.s/2, e.y-e.s/2, e.s, e.s);
+            ctx.fillStyle='rgba(255, 77, 77, 0.2)'; ctx.fillRect(e.x-e.s/2, e.y-e.s/2, e.s, e.s);
         });
-
-        // 自機 (元の三角形デザインを正確に描画)
-        ctx.save();
-        ctx.translate(ship.x, ship.y);
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = '#00f2ff';
-        ctx.fillStyle = '#00f2ff';
-        // メインボディ
-        ctx.beginPath();
-        ctx.moveTo(0, -20);
-        ctx.lineTo(-18, 15);
-        ctx.lineTo(18, 15);
-        ctx.closePath();
-        ctx.fill();
-        // ウィング
-        ctx.beginPath();
-        ctx.moveTo(-18, 5); ctx.lineTo(-28, 20); ctx.lineTo(-18, 20); ctx.fill();
-        ctx.beginPath();
-        ctx.moveTo(18, 5); ctx.lineTo(28, 20); ctx.lineTo(18, 20); ctx.fill();
-        ctx.restore();
+        ctx.save(); ctx.translate(ship.x, ship.y); ctx.shadowBlur=15; ctx.shadowColor=ship.color; ctx.fillStyle=ship.color;
+        ctx.beginPath(); ctx.moveTo(0,-20); ctx.lineTo(-18,15); ctx.lineTo(18,15); ctx.closePath(); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(-18,5); ctx.lineTo(-28,20); ctx.lineTo(-18,20); ctx.fill();
+        ctx.beginPath(); ctx.moveTo(18,5); ctx.lineTo(28,20); ctx.lineTo(18,20); ctx.fill(); ctx.restore();
+        particles.forEach(p => { ctx.globalAlpha=p.l; ctx.fillStyle=p.c; ctx.fillRect(p.x, p.y, 3, 3); }); ctx.globalAlpha=1;
     }
 
-    // Admin commands
+    // 管理者コマンド
     window.addEventListener('keydown', (e) => {
-        if(e.shiftKey && e.key === 'D') {
-            db.ref('scores').once('value').then(s => {
-                const val = s.val();
-                if(!val) return alert("データなし");
-                let csv = "ID,Mode,Collision,Score,Date\n";
-                Object.values(val).forEach(v => {
-                    csv += `${v.id},${v.mode},${v.collision},${v.score},${v.date}\n`;
+        if(gameStage===0 && playerID !== "") {
+            if(e.shiftKey && e.key==='D') {
+                db.ref('scores').once('value').then(s => {
+                    let csv = "ID,Mode,Collision,Score,Overheat,Miss,Date\n";
+                    Object.values(s.val() || {}).forEach(v => csv += `${v.id},${v.mode},${v.collision},${v.score},${v.overheats},${v.misses},${v.date}\n`);
+                    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+                    a.download = "scores.csv"; a.click();
                 });
-                const blob = new Blob([csv], {type: 'text/csv'});
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = "shooter_scores.csv";
-                a.click();
-            });
-        }
-        if(e.shiftKey && e.key === 'R') {
-            if(confirm("全消去しますか？")) db.ref('scores').remove().then(()=>alert("完了"));
+            }
+            if(e.shiftKey && e.key==='R') { if(confirm("全データを削除しますか？")) db.ref('scores').remove(); }
         }
     });
 
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+        else document.exitFullscreen();
+    }
 </script>
 </body>
 </html>
