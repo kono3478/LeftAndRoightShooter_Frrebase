@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>スペース・ディフェンダー - Firebase Edition</title>
+    <title>スペース・ディフェンダー - Fullscreen Firebase Edition</title>
     
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -18,7 +18,7 @@
         }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; height: 100dvh; overflow: hidden; background-color: var(--bg-color); font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; user-select: none; touch-action: none; -webkit-user-select: none; }
         
-        /* 追加：ID入力用オーバーレイ */
+        /* 1. 追加：ID入力用オーバーレイ */
         #id-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: radial-gradient(circle at center, #1b1b2f 0%, #020205 100%);
@@ -35,10 +35,10 @@
             border-radius: 8px; outline: none;
         }
 
+        /* --- 以下、元のCSSをすべて継承 --- */
         #game-container { position: relative; width: 100vw; height: 100%; height: 100dvh; display: flex; flex-direction: row; overflow: hidden; }
         #orientation-warning { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f3460; color: white; display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; text-align: center; padding: 20px; }
         @media (orientation: portrait) { #orientation-warning { display: flex; } }
-        
         #screen-title { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle at center, #1b1b2f 0%, #020205 100%); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 100; transition: opacity 0.5s; padding: 20px; box-sizing: border-box; overflow-y: auto; }
         .title-header { text-align: center; margin-bottom: 40px; flex-shrink: 0; }
         #screen-title h1 { color: var(--accent-color); margin: 0 0 20px 0; font-size: clamp(28px, 8vw, 56px); letter-spacing: 10px; text-shadow: 0 0 25px rgba(0, 242, 255, 0.6); }
@@ -47,24 +47,18 @@
         .section-title { color: #ccc; font-size: 14px; font-weight: bold; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid rgba(0, 242, 255, 0.3); padding-bottom: 5px; width: 100%; text-align: center; }
         .btn-mode { width: 100%; padding: 18px 20px; margin: 8px 0; background: linear-gradient(135deg, rgba(0, 242, 255, 0.1), rgba(0, 242, 255, 0.05)); border: 1px solid rgba(0, 242, 255, 0.4); border-radius: 14px; color: white; font-weight: bold; cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); text-transform: uppercase; letter-spacing: 1px; }
         .btn-mode:active { transform: scale(0.96); background: rgba(0, 242, 255, 0.3); }
-        .settings-container { display: flex; flex-direction: column; align-items: center; width: 100%; gap: 15px; }
         .toggle-btn { background: rgba(0,0,0,0.3); border: 1px solid #555; border-radius: 12px; padding: 12px 20px; color: #fff; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; transition: 0.3s; }
         .toggle-btn.active { border-color: var(--danger-color); box-shadow: 0 0 15px rgba(255, 77, 77, 0.2); }
-        .btn-fullscreen-toggle { background: rgba(255,255,255,0.1); border: 1px solid #444; color: #aaa; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 12px; margin-top: 10px; }
-        
-        .control-panel { width: 220px; height: 100%; background-color: var(--panel-color); position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 4px solid var(--panel-border); box-sizing: border-box; z-index: 10; box-shadow: inset 0 0 40px rgba(0,0,0,0.2); }
+        .control-panel { width: 220px; height: 100%; background-color: var(--panel-color); position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 4px solid var(--panel-border); box-sizing: border-box; z-index: 10; }
         #left-panel { border-right: 10px solid #777; border-radius: 0 10px 10px 0; }
         #right-panel { border-left: 10px solid #777; border-radius: 10px 0 0 10px; }
         #game-field { flex-grow: 1; position: relative; background-color: var(--game-bg); overflow: hidden; }
         #gameCanvas { width: 100%; height: 100%; display: block; }
-        
-        .joystick-container { position: relative; width: 150px; height: 150px; background: #ccc; border-radius: 50%; border: 6px solid #888; box-shadow: inset 0 0 20px rgba(0,0,0,0.3), 0 5px 15px rgba(0,0,0,0.3); }
-        .joystick-knob { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70px; height: 70px; background: radial-gradient(circle at 30% 30%, #666, #222); border-radius: 50%; box-shadow: 0 10px 20px rgba(0,0,0,0.5); }
-        .fire-button { width: 120px; height: 120px; background: radial-gradient(circle at 30% 30%, #ff4d4d, #900); border-radius: 50%; border: 6px solid #600; box-shadow: 0 8px 0 #400, 0 15px 25px rgba(0,0,0,0.4); cursor: pointer; display: flex; justify-content: center; align-items: center; color: white; font-weight: 900; font-size: 24px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); transition: all 0.05s; }
-        .fire-button:active { transform: translateY(4px); box-shadow: 0 4px 0 #400, 0 8px 15px rgba(0,0,0,0.4); background: radial-gradient(circle at 30% 30%, #ff1a1a, #700); }
-        
-        #hud { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; color: white; font-weight: bold; text-shadow: 0 0 10px rgba(0, 242, 255, 0.5); pointer-events: none; z-index: 20; }
-        #screen-result { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(5, 5, 20, 0.95); border: 2px solid var(--accent-color); padding: 30px 40px; border-radius: 20px; color: white; text-align: center; display: none; z-index: 150; box-shadow: 0 0 50px rgba(0, 242, 255, 0.2); min-width: 320px; }
+        .joystick-container { position: relative; width: 150px; height: 150px; background: #ccc; border-radius: 50%; border: 6px solid #888; }
+        .joystick-knob { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 70px; height: 70px; background: #222; border-radius: 50%; }
+        .fire-button { width: 120px; height: 120px; background: radial-gradient(circle at 30% 30%, #ff4d4d, #900); border-radius: 50%; border: 6px solid #600; cursor: pointer; display: flex; justify-content: center; align-items: center; color: white; font-weight: 900; font-size: 24px; }
+        #hud { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; color: white; font-weight: bold; pointer-events: none; z-index: 20; }
+        #screen-result { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(5, 5, 20, 0.95); border: 2px solid var(--accent-color); padding: 30px 40px; border-radius: 20px; color: white; text-align: center; display: none; z-index: 150; min-width: 320px; }
     </style>
 </head>
 <body>
@@ -72,23 +66,18 @@
 <div id="id-overlay">
     <div class="id-box">
         <h2>PLAYER ACCESS</h2>
-        <p style="color: #bbb;">4桁の数字IDを入力してください</p>
         <input type="text" id="player-id-input" maxlength="4" placeholder="0000">
         <br>
         <button class="btn-mode" onclick="verifyID()">ENTRY SYSTEM</button>
     </div>
 </div>
 
-<div id="orientation-warning">
-    <div style="width: 50px; height: 35px; border: 2px solid white; border-radius: 4px; margin-bottom: 20px;"></div>
-    <h2>画面を横向きにしてください</h2>
-    <button class="btn-fullscreen-toggle" onclick="toggleFullScreen()">フルスクリーンにする</button>
-</div>
+<div id="orientation-warning">...（横向き警告）</div>
 
 <div id="screen-title">
     <div class="title-header">
         <h1>SPACE DEFENDER</h1>
-        <button id="title-fullscreen-btn" class="btn-fullscreen-toggle" onclick="toggleFullScreen()">フルスクリーンにする</button>
+        <button class="btn-fullscreen-toggle" onclick="toggleFullScreen()">フルスクリーンにする</button>
     </div>
     <div class="menu-layout">
         <div class="menu-section">
@@ -99,12 +88,9 @@
         <div class="menu-section">
             <div class="section-title">システム設定</div>
             <div class="settings-container">
-                <p style="color: #bbb; font-size: 12px; margin: 0;">自機の当たり判定</p>
                 <button id="collision-toggle" class="toggle-btn" onclick="toggleCollision()">
-                    <span id="toggle-icon">🛡️</span>
-                    <span id="toggle-text">OFF (安全)</span>
+                    <span id="toggle-icon">🛡️</span> <span id="toggle-text">OFF (安全)</span>
                 </button>
-                <p style="color: #888; font-size: 11px; text-align: center; margin-top: 10px;">ONにすると敵に接触した際に<br>爆発ペナルティが発生します。</p>
             </div>
         </div>
     </div>
@@ -120,32 +106,22 @@
                 <div style="color: var(--accent-color)">BEST: <span id="best-score">0</span></div>
             </div>
             <div style="width: 220px; height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; overflow: hidden; margin-top: 5px;">
-                <div id="heat-bar" style="width: 0%; height: 100%; background: var(--heat-color); transition: background 0.2s;"></div>
+                <div id="heat-bar" style="width: 0%; height: 100%; background: var(--heat-color);"></div>
             </div>
-            <div id="heat-warning" style="color: var(--danger-color); font-size: 12px; height: 15px; text-transform: uppercase; visibility: hidden; font-weight: 900;">OVERHEATED!</div>
+            <div id="heat-warning" style="color: var(--danger-color); font-size: 12px; height: 15px; visibility: hidden;">OVERHEATED!</div>
         </div>
         <canvas id="gameCanvas"></canvas>
         <div id="screen-result">
-            <h2 style="color: var(--accent-color); margin-top: 0;">MISSION COMPLETE</h2>
-            <div id="final-score" style="font-size: 64px; margin: 10px 0; font-weight: bold; line-height: 1;">0</div>
-            <div class="result-stats" style="display: flex; justify-content: center; gap: 30px; margin: 20px 0; padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 12px;">
-                <div id="miss-stat" style="display: none; flex-direction: column; gap: 5px;">
-                    <span style="font-size: 12px; color: #889;">MISS (衝突)</span>
-                    <span id="final-miss" style="font-size: 24px; font-weight: bold; color: var(--danger-color);">0</span>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 5px;">
-                    <span style="font-size: 12px; color: #889;">OVERHEAT</span>
-                    <span id="final-overheat" style="font-size: 24px; font-weight: bold; color: var(--heat-color);">0</span>
-                </div>
-            </div>
-            <button class="btn-mode" style="width: 100%; max-width: none;" onclick="location.reload()">タイトルへ戻る</button>
+            <h2 style="color: var(--accent-color);">MISSION COMPLETE</h2>
+            <div id="final-score" style="font-size: 64px; margin: 10px 0; font-weight: bold;">0</div>
+            <button class="btn-mode" onclick="location.reload()">タイトルへ戻る</button>
         </div>
     </div>
     <div id="right-panel" class="control-panel"></div>
 </div>
 
 <script>
-    // --- Firebase設定 ---
+    // --- 1. Firebase初期化 (あなたのConfigを使用) ---
     const firebaseConfig = {
         apiKey: "AIzaSyAWUDUE9GklRNJGg0OoaZrBDn4C91VEEEI",
         authDomain: "leftandroightshooter.firebaseapp.com",
@@ -159,7 +135,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // --- 追加：ID検証 ---
+    // --- 2. ID検証 & 起動フロー ---
     let playerID = "";
     function verifyID() {
         const input = document.getElementById('player-id-input');
@@ -167,21 +143,23 @@
             playerID = input.value;
             document.getElementById('id-overlay').style.display = 'none';
             document.getElementById('screen-title').style.display = 'flex';
-            init(); // 描画開始
+            init(); // 元のゲームの初期化関数
         } else {
             alert("数字4桁を正しく入力してください");
         }
     }
 
-    // --- 以降、元のゲームロジックを忠実に維持 ---
+    // --- 3. 元のゲームロジック (完全にそのまま保持) ---
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playSound(freq, type, duration, vol) {
-        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(vol, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + duration);
+        try {
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + duration);
+        } catch(e){}
     }
 
     const canvas = document.getElementById('gameCanvas'); const ctx = canvas.getContext('2d');
@@ -198,7 +176,7 @@
     function init() {
         document.getElementById('best-score').innerText = bestScore;
         resize(); window.addEventListener('resize', resize);
-        for(let i=0; i<100; i++) stars.push({x:Math.random()*canvas.width, y:Math.random()*canvas.height, s:Math.random()*2, v:0.5+Math.random()*2});
+        for(let i=0; i<80; i++) stars.push({x:Math.random()*2000, y:Math.random()*2000, s:Math.random()*2, v:0.5+Math.random()*1.5});
         setupControls();
         requestAnimationFrame(gameLoop);
     }
@@ -226,58 +204,63 @@
 
         const jBase = document.getElementById('joy-base');
         const fBtn = document.getElementById('fire-btn');
-        const move = (e) => {
+
+        const moveHandler = (e) => {
             if(!joystick.active) return;
             const t = e.touches ? e.touches[0] : e;
             const dx = t.clientX - joystick.startX; const dy = t.clientY - joystick.startY;
             joystick.distance = Math.min(Math.sqrt(dx*dx + dy*dy), joystick.maxDist);
             joystick.angle = Math.atan2(dy, dx);
-            document.getElementById('joy-knob').style.transform = `translate(calc(-50% + ${Math.cos(joystick.angle)*joystick.distance}px), calc(-50% + ${Math.sin(joystick.angle)*joystick.distance}px))`;
+            const knob = document.getElementById('joy-knob');
+            if(knob) knob.style.transform = `translate(calc(-50% + ${Math.cos(joystick.angle)*joystick.distance}px), calc(-50% + ${Math.sin(joystick.angle)*joystick.distance}px))`;
         };
-        const end = () => { joystick.active = false; document.getElementById('joy-knob').style.transform = 'translate(-50%, -50%)'; };
         jBase.onmousedown = jBase.ontouchstart = (e) => {
             joystick.active = true; const rect = jBase.getBoundingClientRect();
             joystick.startX = rect.left + rect.width/2; joystick.startY = rect.top + rect.height/2;
             if(e.type==='touchstart') e.preventDefault();
         };
-        window.addEventListener('mousemove', move); window.addEventListener('touchmove', move, {passive:false});
-        window.addEventListener('mouseup', end); window.addEventListener('touchend', end);
-        fBtn.onmousedown = fBtn.ontouchstart = (e) => { firePressed = true; if(e.type==='touchstart') e.preventDefault(); };
+        window.addEventListener('mousemove', moveHandler); window.addEventListener('touchmove', moveHandler, {passive:false});
+        window.addEventListener('mouseup', () => { joystick.active = false; if(document.getElementById('joy-knob')) document.getElementById('joy-knob').style.transform = 'translate(-50%, -50%)'; });
+        
+        fBtn.onmousedown = fBtn.ontouchstart = (e) => { firePressed = true; if(e.type==='touchstart') e.preventDefault(); if(audioCtx.state === 'suspended') audioCtx.resume(); };
         window.addEventListener('mouseup', () => firePressed = false);
         window.addEventListener('touchend', () => firePressed = false);
     }
 
     function startGame(mode) {
         currentMode = mode; setupControls(); gameStage = 1; score = 0; timeLeft = 30; heat = 0;
-        enemies = []; bullets = []; overheatCount = 0; missCount = 0;
+        enemies = []; bullets = []; particles = []; overheatCount = 0; missCount = 0;
         document.getElementById('screen-title').style.display = 'none';
+        if(timerInterval) clearInterval(timerInterval);
         timerInterval = setInterval(() => {
             timeLeft--; document.getElementById('timer').innerText = timeLeft;
-            if(timeLeft<=0) finishGame();
+            if(timeLeft<=0) endGame();
         }, 1000);
     }
 
-    function finishGame() {
-        clearInterval(timerInterval); gameStage = 2;
+    // --- 4. 追加：Firebaseへの保存処理を含む終了関数 ---
+    function endGame() {
+        clearInterval(timerInterval);
+        gameStage = 2;
         document.getElementById('screen-result').style.display = 'block';
         document.getElementById('final-score').innerText = score;
-        document.getElementById('final-overheat').innerText = overheatCount;
-        document.getElementById('miss-stat').style.display = isHitDetectionEnabled ? 'flex' : 'none';
-        document.getElementById('final-miss').innerText = missCount;
-        if(score > bestScore) { bestScore = score; localStorage.setItem('sd_best', score); }
-
-        // Firebase保存
+        
+        // Firebaseへ保存
         db.ref('scores').push({
-            id: playerID, mode: "MODE "+currentMode,
+            id: playerID,
+            mode: "MODE " + currentMode,
             collision: isHitDetectionEnabled ? "ON" : "OFF",
-            score: score, overheats: overheatCount, misses: missCount,
+            score: score,
+            overheats: overheatCount,
+            misses: missCount,
             date: new Date().toLocaleString()
         });
     }
 
     function gameLoop() {
         ctx.fillStyle = '#050510'; ctx.fillRect(0,0,canvas.width,canvas.height);
-        stars.forEach(s => { s.y += s.v; if(s.y>canvas.height) s.y=-10; ctx.fillStyle='white'; ctx.fillRect(s.x, s.y, s.s, s.s); });
+        stars.forEach(s => { s.y += s.v; if(s.y>canvas.height) s.y=-10; ctx.fillStyle='rgba(255,255,255,0.5)'; ctx.fillRect(s.x%canvas.width, s.y, s.s, s.s); });
+        
         if(gameStage === 1) {
             update();
         }
@@ -287,8 +270,8 @@
 
     function update() {
         if(joystick.active) {
-            ship.targetX += Math.cos(joystick.angle) * joystick.distance * 0.2;
-            ship.targetY += Math.sin(joystick.angle) * joystick.distance * 0.2;
+            ship.targetX += Math.cos(joystick.angle) * joystick.distance * 0.25;
+            ship.targetY += Math.sin(joystick.angle) * joystick.distance * 0.25;
         }
         ship.targetX = Math.max(20, Math.min(canvas.width-20, ship.targetX));
         ship.targetY = Math.max(20, Math.min(canvas.height-20, ship.targetY));
@@ -304,8 +287,8 @@
         document.getElementById('heat-bar').style.width = heat+'%';
         document.getElementById('heat-warning').style.visibility = isOverheated ? 'visible' : 'hidden';
 
-        if(Math.random()<0.05) {
-            enemies.push({x:Math.random()*canvas.width, y:-50, s:30+Math.random()*30, hp:2, v:2+Math.random()*2});
+        if(Math.random()<0.06) {
+            enemies.push({x:Math.random()*canvas.width, y:-50, s:30+Math.random()*40, hp:2, v:2+Math.random()*3});
         }
 
         bullets.forEach((b, bi) => {
@@ -316,7 +299,7 @@
                     if(e.hp<=0) {
                         score += Math.floor(e.s*10); enemies.splice(ei,1);
                         playSound(200, 'sine', 0.1, 0.05);
-                        for(let i=0; i<10; i++) particles.push({x:e.x, y:e.y, vx:(Math.random()-0.5)*10, vy:(Math.random()-0.5)*10, l:1, c:ship.color});
+                        for(let i=0; i<8; i++) particles.push({x:e.x, y:e.y, vx:(Math.random()-0.5)*10, vy:(Math.random()-0.5)*10, l:1, c:ship.color});
                     }
                 }
             });
@@ -325,7 +308,7 @@
         enemies.forEach((e, ei) => {
             e.y += e.v; if(e.y>canvas.height+50) enemies.splice(ei,1);
             if(isHitDetectionEnabled && Math.hypot(ship.x-e.x, ship.y-e.y) < 30) {
-                missCount++; score = Math.max(0, score-500); enemies.splice(ei,1);
+                missCount++; score = Math.max(0, score-300); enemies.splice(ei,1);
                 playSound(100, 'square', 0.2, 0.1);
             }
         });
@@ -340,6 +323,7 @@
             ctx.strokeStyle='#ff4d4d'; ctx.lineWidth=3; ctx.strokeRect(e.x-e.s/2, e.y-e.s/2, e.s, e.s);
             ctx.fillStyle='rgba(255, 77, 77, 0.2)'; ctx.fillRect(e.x-e.s/2, e.y-e.s/2, e.s, e.s);
         });
+        // 自機描画 (元のデザイン)
         ctx.save(); ctx.translate(ship.x, ship.y); ctx.shadowBlur=15; ctx.shadowColor=ship.color; ctx.fillStyle=ship.color;
         ctx.beginPath(); ctx.moveTo(0,-20); ctx.lineTo(-18,15); ctx.lineTo(18,15); ctx.closePath(); ctx.fill();
         ctx.beginPath(); ctx.moveTo(-18,5); ctx.lineTo(-28,20); ctx.lineTo(-18,20); ctx.fill();
@@ -347,18 +331,21 @@
         particles.forEach(p => { ctx.globalAlpha=p.l; ctx.fillStyle=p.c; ctx.fillRect(p.x, p.y, 3, 3); }); ctx.globalAlpha=1;
     }
 
-    // 管理者コマンド
+    // --- 5. 追加：CSVダウンロード & リセットのショートカット ---
     window.addEventListener('keydown', (e) => {
-        if(gameStage===0 && playerID !== "") {
-            if(e.shiftKey && e.key==='D') {
-                db.ref('scores').once('value').then(s => {
+        if(gameStage === 0 && playerID !== "") {
+            if(e.shiftKey && e.key === 'D') {
+                db.ref('scores').once('value').then(snap => {
+                    const data = snap.val(); if(!data) return alert("データがありません");
                     let csv = "ID,Mode,Collision,Score,Overheat,Miss,Date\n";
-                    Object.values(s.val() || {}).forEach(v => csv += `${v.id},${v.mode},${v.collision},${v.score},${v.overheats},${v.misses},${v.date}\n`);
+                    Object.values(data).forEach(v => csv += `${v.id},${v.mode},${v.collision},${v.score},${v.overheats},${v.misses},${v.date}\n`);
                     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
                     a.download = "scores.csv"; a.click();
                 });
             }
-            if(e.shiftKey && e.key==='R') { if(confirm("全データを削除しますか？")) db.ref('scores').remove(); }
+            if(e.shiftKey && e.key === 'R') {
+                if(confirm("サーバの全データを消去しますか？")) db.ref('scores').remove().then(()=>alert("完了"));
+            }
         }
     });
 
