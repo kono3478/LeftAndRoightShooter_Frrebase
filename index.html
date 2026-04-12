@@ -2,581 +2,767 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>モグラたたきアンケート v9.41</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>スペース・ディフェンダー - Fullscreen Edition</title>
     <style>
-        body {
-            touch-action: manipulation;
+        :root {
+            --bg-color: #020205;
+            --panel-color: #e0e0e0;
+            --game-bg: #050510;
+            --text-color: #ffffff;
+            --accent-color: #00f2ff;
+            --heat-color: #ff9f43;
+            --danger-color: #ff4d4d;
+            --panel-border: #999;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            height: 100dvh;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             user-select: none;
-            -webkit-tap-highlight-color: transparent;
-            background-color: #f8fafc;
-            overflow-x: hidden;
-            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
-            min-height: 100vh;
-        }
-        .theme-simple { background-color: #f8fafc; transition: background 0.5s; }
-        .theme-simple .game-board-container { background-color: #ffffff; border: 4px solid #f1f5f9; }
-        .theme-simple .hole { background-color: #e2e8f0; border-radius: 50%; box-shadow: inset 0 4px 6px rgba(0,0,0,0.05); }
-        
-        .theme-farm { background-color: #f0fdf4; transition: background 0.5s; }
-        .theme-farm .game-board-container { 
-            background-color: #bef264; border: 8px solid #84cc16; 
-            background-image: radial-gradient(#a3e635 20%, transparent 20%); background-size: 30px 30px;
-        }
-        /* 穴の色を明るい色に設定してモグラとのコントラストを強調 */
-        .theme-farm .hole { 
-            background-color: #d2b48c; 
-            border: 4px solid #a89078; 
-            border-radius: 40% 40% 25% 25%;
-            box-shadow: inset 0 8px 10px rgba(0,0,0,0.2);
-        }
-        
-        .hole { position: relative; overflow: hidden; aspect-ratio: 1 / 1; }
-        .mole {
-            position: absolute; bottom: -100%; left: 0; width: 100%; height: 100%;
-            display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 10;
-        }
-        .mole.up { bottom: 5%; }
-
-        /* ヒット可能時間を公平にするためアニメーション速度を全モードで統一 */
-        .mole.standard-move { transition: bottom 0.12s ease-out; }
-        .mole.juicy-move { transition: bottom 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.2); }
-
-        .mole-graphic { width: 95%; height: 95%; display: flex; align-items: center; justify-content: center; }
-        .theme-simple .farm-mole { display: none !important; }
-        .theme-simple .simple-mole { display: flex !important; }
-        .theme-farm .farm-mole { display: block !important; }
-        .theme-farm .simple-mole { display: none !important; }
-
-        /* 画面振動を抑えめに設定 */
-        @keyframes strong-shake { 
-            0%, 100% { transform: translate(0, 0); } 
-            10%, 30%, 50%, 70%, 90% { transform: translate(-3px, 3px); } 
-            20%, 40%, 60%, 80% { transform: translate(3px, -3px); } 
-        }
-        .shake-active { animation: strong-shake 0.2s cubic-bezier(.36,.07,.19,.97) both; }
-
-        @keyframes flash-white { 0% { background-color: rgba(255,255,255,1); } 100% { background-color: rgba(255,255,255,0); } }
-        .flash-overlay { position: fixed; inset: 0; pointer-events: none; z-index: 5000; display: none; }
-        .flash-active { display: block; animation: flash-white 0.3s ease-out forwards; }
-
-        /* スコアポップアップを地味めに調整 */
-        @keyframes juicy-pop { 
-            0% { transform: translate(-50%, 0) scale(0.8); opacity: 0; } 
-            30% { transform: translate(-50%, -60px) scale(1.2); opacity: 1; } 
-            100% { transform: translate(-50%, -120px) scale(1.5); opacity: 0; } 
-        }
-        .score-popup-juicy { 
-            position: fixed; pointer-events: none; font-weight: 900; 
-            font-size: 2.5rem; z-index: 1000; 
-            animation: juicy-pop 0.6s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards; 
-            text-shadow: 2px 2px 0px white; color: #1e293b; 
-        }
-        
-        @keyframes sober-pop { 0% { transform: translate(-50%, 0); opacity: 1; } 100% { transform: translate(-50%, -50px); opacity: 0; } }
-        .score-popup-sober { 
-            position: fixed; pointer-events: none; font-weight: 900; 
-            font-size: 2.2rem; z-index: 1000; 
-            animation: sober-pop 0.5s ease-out forwards; 
-            color: #ffffff; 
-            text-shadow: 1.5px 1.5px 0 #000, -1.5px -1.5px 0 #000, 1.5px -1.5px 0 #000, -1.5px 1.5px 0 #000;
+            touch-action: none; 
+            -webkit-user-select: none;
         }
 
-        .screen { width: 100%; max-width: 550px; margin: 0 auto; display: flex; flex-direction: column; }
-        .hidden { display: none !important; }
-        .survey-card { background: white; padding: 2rem; border-radius: 2.5rem; border: 1px solid #f1f5f9; margin-bottom: 2rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1); }
-        .likert-container { display: flex; justify-content: space-between; align-items: stretch; background-color: #f1f5f9; padding: 1.5rem 1rem; border-radius: 1.5rem; gap: 0.5rem; }
-        .likert-item { display: flex; flex-direction: column; align-items: center; gap: 0.8rem; cursor: pointer; flex: 1; }
-        .likert-item input { width: 2rem; height: 2rem; cursor: pointer; accent-color: #0f172a; }
-        .likert-label { font-size: 0.7rem; font-weight: 900; color: #64748b; text-align: center; height: 1.2rem; display: flex; align-items: center; line-height: 1.2; }
-        .likert-num { font-size: 1.5rem; font-weight: 900; color: #0f172a; }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 1rem; }
-        .modal-content { background: white; padding: 2.5rem; border-radius: 2rem; max-width: 400px; width: 100%; text-align: center; }
-        #debug-menu { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.98); color: #22c55e; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: monospace; }
-        .debug-row { width: 85%; max-width: 450px; padding: 1.5rem; margin: 0.5rem; border: 2px solid #166534; border-radius: 1rem; text-align: center; font-size: 1.3rem; font-weight: bold; cursor: pointer; }
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100%;
+            height: 100dvh;
+            display: flex;
+            flex-direction: row;
+            overflow: hidden;
+        }
+
+        /* 向き警告 */
+        #orientation-warning {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0f3460;
+            color: white;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            text-align: center;
+            padding: 20px;
+        }
+
+        @media (orientation: portrait) {
+            #orientation-warning { display: flex; }
+        }
+
+        /* タイトル画面 */
+        #screen-title {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #1b1b2f 0%, #020205 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center;
+            z-index: 100;
+            transition: opacity 0.5s;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        .title-header {
+            text-align: center;
+            margin-bottom: 40px;
+            flex-shrink: 0;
+        }
+
+        #screen-title h1 {
+            color: var(--accent-color);
+            margin: 0 0 20px 0;
+            font-size: clamp(28px, 8vw, 56px);
+            letter-spacing: 10px;
+            text-shadow: 0 0 25px rgba(0, 242, 255, 0.6);
+        }
+
+        .menu-layout {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: stretch;
+            gap: 30px;
+            width: 100%;
+            max-width: 900px;
+            flex-shrink: 0;
+        }
+
+        .menu-section {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            backdrop-filter: blur(10px);
+        }
+
+        .section-title {
+            color: #ccc;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 1px solid rgba(0, 242, 255, 0.3);
+            padding-bottom: 5px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .toggle-btn {
+            background: #222;
+            border: 2px solid #444;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 50px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-weight: bold;
+            transition: all 0.3s;
+            width: 100%;
+            max-width: 200px;
+        }
+
+        .toggle-btn.active {
+            background: var(--danger-color);
+            border-color: #ff8888;
+            box-shadow: 0 0 15px rgba(255, 77, 77, 0.4);
+        }
+
+        .btn-mode {
+            background: var(--accent-color);
+            color: #000;
+            border: none;
+            padding: 18px 24px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            border-radius: 50px;
+            cursor: pointer;
+            width: 100%;
+            max-width: 300px;
+            box-shadow: 0 4px 15px rgba(0, 242, 255, 0.25);
+            transition: transform 0.2s;
+        }
+
+        .btn-mode:active { transform: scale(0.97); }
+
+        .btn-fullscreen-toggle {
+            background: rgba(0, 242, 255, 0.1);
+            color: #00f2ff;
+            border: 2px solid #00f2ff;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
+            transition: all 0.2s;
+        }
+
+        .btn-fullscreen-toggle:hover {
+            background: rgba(0, 242, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        /* ゲーム画面 */
+        .control-panel {
+            width: 18%; 
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: var(--panel-color);
+            border-left: 3px solid var(--panel-border);
+            border-right: 3px solid var(--panel-border);
+            z-index: 10;
+        }
+
+        #game-field {
+            flex-grow: 1;
+            position: relative;
+            background: var(--game-bg);
+            box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.8);
+        }
+
+        canvas { display: block; width: 100%; height: 100%; }
+
+        .btn-action {
+            width: 90px;
+            height: 90px;
+            background: radial-gradient(circle, #ff4757, #e84118);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            box-shadow: 0 6px 0 #8a2a1a;
+            touch-action: none;
+            cursor: pointer;
+        }
+
+        .joystick-base {
+            width: 130px;
+            height: 130px;
+            background: rgba(0, 0, 0, 0.1);
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            position: relative;
+            touch-action: none;
+        }
+        .joystick-thumb {
+            width: 55px;
+            height: 55px;
+            background: var(--accent-color);
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+        }
+
+        #hud {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+            pointer-events: none;
+            z-index: 20;
+        }
+
+        #screen-result {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(5, 5, 20, 0.95);
+            border: 2px solid var(--accent-color);
+            padding: 30px 40px;
+            border-radius: 20px;
+            color: white;
+            text-align: center;
+            display: none;
+            z-index: 150;
+            box-shadow: 0 0 50px rgba(0, 242, 255, 0.2);
+            min-width: 320px;
+        }
+
+        @media (max-width: 768px) {
+            .menu-layout { flex-direction: column; gap: 20px; }
+            .menu-section { padding: 15px; }
+            #screen-title { padding-top: 20px; }
+        }
     </style>
 </head>
-<body id="main-body" class="theme-simple flex items-center justify-center p-4 text-slate-800">
+<body>
 
-    <div id="flash-overlay" class="flash-overlay"></div>
+    <div id="orientation-warning">
+        <div style="width: 50px; height: 35px; border: 2px solid white; border-radius: 4px; margin-bottom: 20px;"></div>
+        <h2>画面を横向きにしてください</h2>
+        <button class="btn-fullscreen-toggle" onclick="toggleFullScreen()">フルスクリーンにする</button>
+    </div>
 
-    <!-- Modals -->
-    <div id="modal-confirm" class="modal-overlay hidden">
-        <div class="modal-content">
-            <h3 class="text-2xl font-black mb-4 text-slate-900">データの全削除</h3>
-            <p class="text-slate-500 mb-8 font-bold">全回答データを削除し、IDカウンターを0000に戻しますか？</p>
-            <div class="flex flex-col gap-3">
-                <button id="execute-reset-btn" onclick="executeDataReset()" class="bg-red-500 text-white font-black py-4 rounded-xl shadow-lg">はい、削除します</button>
-                <button onclick="closeConfirmModal()" class="bg-slate-100 text-slate-500 font-black py-4 rounded-xl">キャンセル</button>
+    <div id="screen-title">
+        <div class="title-header">
+            <h1>SPACE DEFENDER</h1>
+            <button id="title-fullscreen-btn" class="btn-fullscreen-toggle" onclick="toggleFullScreen()">フルスクリーンにする</button>
+        </div>
+        
+        <div class="menu-layout">
+            <div class="menu-section">
+                <div class="section-title">操作モード選択</div>
+                <button class="btn-mode" onclick="startGame(1)">MODE 1 (左スティック / 右FIRE)</button>
+                <button class="btn-mode" onclick="startGame(2)">MODE 2 (右スティック / 左FIRE)</button>
+            </div>
+
+            <div class="menu-section">
+                <div class="section-title">システム設定</div>
+                <div class="settings-container">
+                    <p style="color: #bbb; font-size: 12px; margin: 0;">自機の当たり判定</p>
+                    <button id="collision-toggle" class="toggle-btn" onclick="toggleCollision()">
+                        <span id="toggle-icon">
+                            <svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:currentColor;"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+                        </span>
+                        <span id="toggle-text">OFF (安全)</span>
+                    </button>
+                    <p style="color: #888; font-size: 11px; text-align: center; margin-top: 10px;">ONにすると敵に接触した際に<br>爆発ペナルティが発生します。</p>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Admin Console -->
-    <div id="debug-menu" class="hidden text-center">
-        <h2 class="text-3xl font-black mb-12 tracking-widest text-emerald-400 uppercase">Admin Console v9.41</h2>
-        <div onclick="debugJump(1)" class="debug-row">MODE 1: RULE</div>
-        <div onclick="debugJump(2)" class="debug-row">MODE 2: GRAPHIC</div>
-        <div onclick="debugJump(3)" class="debug-row">MODE 3: EFFECT</div>
-        <div onclick="debugJump(4)" class="debug-row">MODE 4: FULL</div>
-        <div onclick="location.reload()" class="debug-row border-red-900 text-red-500 mt-8">TITLE RESET</div>
-        <div onclick="triggerCSVDownload()" class="debug-row border-blue-900 text-blue-400 mt-2">CSV DOWNLOAD (Shift+D)</div>
-        <div onclick="openConfirmModal()" class="debug-row border-orange-900 text-orange-400 mt-2">DATA RESET (Shift+R)</div>
-        <p class="mt-8 text-slate-500 font-bold text-sm">Shift+M: Menu / Shift+D: CSV / Shift+R: Reset</p>
-    </div>
-
-    <!-- Screen: Start -->
-    <div id="screen-start" class="screen bg-white p-10 rounded-[3.5rem] shadow-2xl text-center border border-slate-100">
-        <h1 class="text-5xl font-black mb-6 text-slate-900 tracking-tighter leading-tight">モグラたたき<br>アンケート</h1>
-        <p class="text-slate-400 mb-12 font-black tracking-widest uppercase text-[10px]">System v9.41 (Ready)</p>
-        <p class="text-slate-500 mb-12 font-bold leading-relaxed">ゲームを通じたUI演出の評価実験です。<br>4つの異なるモードを順番にプレイしていただきます。</p>
-        <button id="start-survey-btn" onclick="handleStartClick()" class="w-full bg-slate-900 text-white font-black py-8 px-6 rounded-[2.5rem] transition transform active:scale-95 shadow-2xl text-2xl">調査を開始する</button>
-        <p id="auth-status" class="mt-4 text-[10px] text-slate-300 uppercase text-center">Connecting...</p>
-    </div>
-
-    <!-- Screen: Pre-Survey -->
-    <div id="screen-pre-survey" class="screen hidden max-h-[95vh] overflow-y-auto px-1 text-slate-800">
-        <h2 class="text-3xl font-black mb-10 text-center text-slate-900">事前アンケート</h2>
-        <div class="survey-card"><p class="font-bold mb-8 text-lg">Q1. 普段どの程度ゲームを遊びますか？</p><div id="likert-q1"></div></div>
-        <div class="survey-card"><p class="font-bold mb-8 text-lg">Q2. あなたはゲームが得意ですか？</p><div id="likert-q2"></div></div>
-        <div class="survey-card">
-            <p class="font-bold mb-8 text-lg text-center">Q3. 以下の各要素はゲームのおもしろさにどの程度影響すると思いますか</p>
-            <div class="space-y-16">
-                <div><p class="text-sm font-black text-slate-500 mb-4 ml-2 uppercase">● ルール</p><div id="likert-q3-rule"></div></div>
-                <div><p class="text-sm font-black text-slate-500 mb-4 ml-2 uppercase">● グラフィック</p><div id="likert-q3-graphic"></div></div>
-                <div><p class="text-sm font-black text-slate-500 mb-4 ml-2 uppercase">● エフェクト</p><div id="likert-q3-effect"></div></div>
-                <div><p class="text-sm font-black text-slate-500 mb-4 ml-2 uppercase">● サウンド</p><div id="likert-q3-sound"></div></div>
+    <div id="game-container">
+        <div id="left-panel" class="control-panel"></div>
+        <div id="game-field">
+            <div id="hud">
+                <div style="display: flex; gap: 25px; font-size: 18px;">
+                    <div>TIME: <span id="timer">30</span>s</div>
+                    <div>SCORE: <span id="score">0</span></div>
+                    <div style="color: var(--accent-color)">BEST: <span id="best-score">0</span></div>
+                </div>
+                <div style="width: 220px; height: 12px; background: rgba(255,255,255,0.1); border-radius: 6px; overflow: hidden; margin-top: 5px;">
+                    <div id="heat-bar" style="width: 0%; height: 100%; background: var(--heat-color); transition: background 0.2s;"></div>
+                </div>
+                <div id="heat-warning" style="color: var(--danger-color); font-size: 12px; height: 15px; text-transform: uppercase; visibility: hidden; font-weight: 900;">OVERHEATED!</div>
+            </div>
+            <canvas id="gameCanvas"></canvas>
+            <div id="screen-result">
+                <h2 style="color: var(--accent-color); margin-top: 0;">MISSION COMPLETE</h2>
+                <div id="final-score" style="font-size: 64px; margin: 10px 0; font-weight: bold; line-height: 1;">0</div>
+                <div class="result-stats" style="display: flex; justify-content: center; gap: 30px; margin: 20px 0; padding: 15px; background: rgba(255, 255, 255, 0.05); border-radius: 12px;">
+                    <div id="miss-stat" style="display: none; flex-direction: column; gap: 5px;">
+                        <span style="font-size: 12px; color: #889;">MISS (衝突)</span>
+                        <span id="final-miss" style="font-size: 24px; font-weight: bold; color: var(--danger-color);">0</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 5px;">
+                        <span style="font-size: 12px; color: #889;">OVERHEAT</span>
+                        <span id="final-overheat" style="font-size: 24px; font-weight: bold; color: var(--heat-color);">0</span>
+                    </div>
+                </div>
+                <div id="new-record" style="color: #ffeb3b; font-weight: bold; margin-bottom: 25px; display: none; font-size: 20px; text-shadow: 0 0 10px rgba(255,235,59,0.5);">NEW RECORD!</div>
+                <button class="btn-mode" style="width: 100%; max-width: none;" onclick="location.reload()">タイトルへ戻る</button>
             </div>
         </div>
-        <button onclick="commitPreSurvey()" class="w-full bg-slate-900 text-white font-black py-8 rounded-[2.5rem] mb-20 shadow-2xl active:scale-95 transition text-xl">回答を保存して開始</button>
+        <div id="right-panel" class="control-panel"></div>
     </div>
 
-    <!-- Screen: Inter -->
-    <div id="screen-inter" class="screen hidden bg-white p-12 rounded-[4.5rem] shadow-2xl text-center border border-slate-100">
-        <h2 id="inter-title" class="text-4xl font-black mb-6 text-slate-900 leading-tight">準備</h2>
-        <p id="inter-desc" class="text-slate-500 mb-12 font-bold leading-relaxed text-2xl"></p>
-        <button onclick="launchMode()" class="w-full bg-blue-600 text-white font-black py-8 px-6 rounded-[3.5rem] shadow-2xl active:scale-95 transition text-3xl">START</button>
-    </div>
-
-    <!-- Screen: Game -->
-    <div id="screen-game" class="hidden w-full max-w-sm flex flex-col items-center">
-        <div id="impact-layer" class="w-full h-full fixed inset-0 pointer-events-none z-40"></div>
-        <div class="w-full flex justify-between items-center mb-8 bg-white/95 p-6 rounded-[3rem] shadow-xl border-4 border-white">
-            <div class="text-left text-slate-900"><p class="text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Score</p><p id="score-val" class="text-5xl font-black leading-none">0</p></div>
-            <p id="timer-val" class="text-6xl font-black text-red-500 tabular-nums">30s</p>
-            <div class="text-right"><span id="mode-badge" class="text-[10px] font-black bg-slate-950 px-4 py-2 rounded-2xl text-white tracking-widest uppercase shadow-md">MODE 1</span></div>
-        </div>
-        <div id="game-board" class="game-board-container grid grid-cols-3 gap-6 w-full p-8 rounded-[4rem] shadow-2xl relative border-8 border-white/40">
-            <div class="hole"><div class="mole"></div></div><div class="hole"><div class="mole"></div></div><div class="hole"><div class="mole"></div></div>
-            <div class="hole"><div class="mole"></div></div><div class="hole"><div class="mole"></div></div><div class="hole"><div class="mole"></div></div>
-            <div class="hole"><div class="mole"></div></div><div class="hole"><div class="mole"></div></div><div class="hole"><div class="mole"></div></div>
-        </div>
-    </div>
-
-    <!-- Screen: Results Summary -->
-    <div id="screen-game-results" class="screen hidden bg-white p-10 rounded-[3.5rem] shadow-2xl text-center border border-slate-100">
-        <h2 class="text-3xl font-black mb-8 text-slate-900 tracking-tighter text-center">プレイ結果まとめ</h2>
-        <div id="results-summary-list" class="space-y-4 mb-10 text-left"></div>
-        <button onclick="showPostSurvey()" class="w-full bg-slate-900 text-white font-bold py-6 rounded-2xl text-xl shadow-lg transition active:scale-95">アンケートに進む</button>
-    </div>
-
-    <!-- Screen: Post-Survey -->
-    <div id="screen-post-survey" class="screen hidden max-h-[95vh] overflow-y-auto p-1 text-slate-800">
-        <h2 class="text-4xl font-black mb-12 text-center tracking-tighter text-slate-900">事後アンケート</h2>
-        <div class="survey-card"><p class="font-bold mb-10 text-xl text-slate-700 leading-tight">Q4. 各モードのおもしろさをそれぞれ評価してください</p><div id="q4-container" class="space-y-16"></div></div>
-        <div class="survey-card">
-            <p class="font-bold mb-10 text-xl text-slate-800 leading-tight">Q5. 4つのモードをおもしろかった順に選択してください (重複不可)</p>
-            <div class="space-y-8">
-                <div class="flex items-center gap-6"><span class="w-12 h-12 flex items-center justify-center bg-yellow-400 text-white rounded-2xl font-black text-xl shadow-sm">1</span><select id="r1" class="flex-1 p-6 bg-slate-100 rounded-[2rem] font-bold border-2 border-slate-200 outline-none"></select></div>
-                <div class="flex items-center gap-6"><span class="w-12 h-12 flex items-center justify-center bg-slate-300 text-white rounded-2xl font-black text-xl shadow-sm">2</span><select id="r2" class="flex-1 p-6 bg-slate-100 rounded-[2rem] font-bold border-2 border-slate-200 outline-none"></select></div>
-                <div class="flex items-center gap-6"><span class="w-12 h-12 flex items-center justify-center bg-orange-300 text-white rounded-2xl font-black text-xl shadow-sm">3</span><select id="r3" class="flex-1 p-6 bg-slate-100 rounded-[2rem] font-bold border-2 border-slate-200 outline-none"></select></div>
-                <div class="flex items-center gap-6"><span class="w-12 h-12 flex items-center justify-center bg-slate-100 text-slate-400 rounded-2xl font-black text-xl shadow-sm">4</span><select id="r4" class="flex-1 p-6 bg-slate-100 rounded-[2rem] font-bold border-2 border-slate-200 outline-none"></select></div>
-            </div>
-            <p id="q5-error" class="text-red-500 font-black mt-6 hidden text-center bg-red-50 p-4 rounded-2xl border-2 border-red-100">※順位をすべて重複なく選択してください</p>
-        </div>
-        <div class="survey-card"><p class="font-bold mb-12 text-center text-xl text-slate-700">Q6. 以下の要素はゲームのおもしろさにどの程度影響したと思いますか</p><div id="q6-container" class="space-y-16"></div></div>
-        <div class="survey-card"><p id="q7-label" class="font-bold mb-10 text-xl text-center text-slate-700"></p><div id="q7-container" class="space-y-16"></div></div>
-        <div class="survey-card"><p class="font-bold mb-6 text-xl text-center text-slate-800">自由記述</p><textarea id="free-ans" class="w-full bg-slate-50 p-8 rounded-[3rem] h-60 text-lg border-4 border-slate-100 outline-none focus:border-blue-400" placeholder="プレイ前の予想と、実際にプレイした後の印象に違いがあれば書いてください..."></textarea></div>
-        <button id="final-submit-btn" onclick="finalSubmit()" class="w-full bg-blue-600 text-white font-black py-10 rounded-[3.5rem] mb-32 shadow-2xl active:scale-95 transition text-3xl">調査データを送信して終了</button>
-    </div>
-
-    <!-- Screen: End -->
-    <div id="screen-end" class="screen hidden bg-white p-12 rounded-[5rem] shadow-2xl text-center border border-slate-100">
-        <div class="w-40 h-40 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-12 text-8xl font-bold shadow-inner animate-pulse">✓</div>
-        <h2 class="text-5xl font-black mb-8 text-slate-900 tracking-tighter">送信完了</h2>
-        <p class="text-slate-500 mb-16 font-bold leading-relaxed text-2xl">ご協力ありがとうございました。<br>ブラウザを閉じて終了してください。</p>
-        <button onclick="location.reload()" class="text-slate-300 font-bold text-xs tracking-[0.8em] underline uppercase">Return to Top</button>
-    </div>
-
-    <!-- Templates -->
-    <template id="mole-template">
-        <div class="mole-graphic farm-mole">
-            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                <ellipse cx="50" cy="70" rx="38" ry="32" fill="#78350f" />
-                <path d="M22 55 Q50 15 78 55 L78 66 L22 66 Z" fill="#ffffff" stroke="#cbd5e1" stroke-width="1.5" />
-                <rect x="20" y="63" width="60" height="7" rx="3" fill="#f8fafc" />
-                <circle cx="35" cy="78" r="4.5" fill="black" /><circle cx="65" cy="78" r="4.5" fill="black" />
-                <circle cx="50" cy="88" r="8" fill="#f472b6" />
-                <line x1="25" y1="88" x2="8" y2="85" stroke="#451a03" stroke-width="2.5" /><line x1="75" y1="88" x2="92" y2="85" stroke="#451a03" stroke-width="2.5" />
-            </svg>
-        </div>
-        <div class="mole-graphic simple-mole"><div class="w-24 h-24 rounded-full bg-slate-950 border-4 border-white shadow-2xl"></div></div>
-    </template>
-    <template id="bonus-mole-template">
-        <div class="mole-graphic farm-mole">
-            <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-                <ellipse cx="50" cy="72" rx="44" ry="34" fill="#ca8a04" />
-                <path d="M20 52 Q50 8 80 52 L80 62 L20 62 Z" fill="#ef4444" />
-                <circle cx="50" cy="22" r="10" fill="white" />
-                <circle cx="35" cy="78" r="5" fill="black" /><circle cx="65" cy="78" r="5" fill="black" />
-                <circle cx="50" cy="90" r="9" fill="#f472b6" />
-            </svg>
-        </div>
-        <div class="mole-graphic simple-mole"><div class="w-24 h-24 rounded-full bg-red-600 border-4 border-white shadow-2xl"></div></div>
-    </template>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, serverTimestamp, getDocs, deleteDoc, doc, runTransaction, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBpzqOlBowj-2ERZJOZzZnh-KbfBJ6wN5Y",
-            authDomain: "shooter1-4.firebaseapp.com",
-            projectId: "shooter1-4",
-            storageBucket: "shooter1-4.firebasestorage.app",
-            messagingSenderId: "837556934913",
-            appId: "1:837556934913:web:d4ffbadf8faae548772300",
-            measurementId: "G-G0M85T9HZ3"
+    <script>
+        // --- Audio Setup ---
+        const sounds = {
+            shoot: new Audio('https://raw.githubusercontent.com/kono3478/ShootingSE_NES/main/NES-Shooter01-1(Shoot).mp3'),
+            damageGreen: new Audio('https://raw.githubusercontent.com/kono3478/ShootingSE_NES/main/NES-Shooter01-3(Damage).mp3'),
+            damageYellow: new Audio('https://raw.githubusercontent.com/kono3478/ShootingSE_NES/main/NES-Shooter01-4(Damage).mp3'),
+            damageRed: new Audio('https://raw.githubusercontent.com/kono3478/ShootingSE_SNES/main/SNES-Shooter01-06(Damage).mp3'),
+            playerDeath: new Audio('https://raw.githubusercontent.com/kono3478/ShootingSE_NES/main/NES-Shooter01-5(Damage).mp3'),
+            bgm: new Audio('https://raw.githubusercontent.com/kono3478/BGM/main/8bit-act04_stage01.mp3')
         };
-        const customAppId = 'shooter1-4-session'; 
+        sounds.bgm.loop = true;
+        sounds.bgm.volume = 0.4;
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        let user = null;
-
-        const startSignIn = async () => {
-            try {
-                const cred = await signInAnonymously(auth);
-                user = cred.user;
-                document.getElementById('auth-status').innerText = "Connected ✓";
-            } catch (error) {
-                document.getElementById('auth-status').innerText = "Auth Error";
-            }
-        };
-        onAuthStateChanged(auth, (u) => { user = u; });
-        startSignIn();
-
-        let audioCtx;
-        const BGM_URL = "https://raw.githubusercontent.com/kono3478/sozai/main/bgm_koneko.mp3";
-        let bgmAudio = new Audio(BGM_URL);
-        bgmAudio.loop = true;
-        bgmAudio.crossOrigin = "anonymous";
-
-        // State
-        let userRoute = 'A', currentStepIndex = 0, routeSteps = [];
-        let sessionData = { studentId: "", scores: {}, pre: {}, post: {} };
-        let isPlaying = false, score = 0, timerVal = 30, timerId;
-
-        const screens = {
-            start: document.getElementById('screen-start'),
-            pre: document.getElementById('screen-pre-survey'),
-            inter: document.getElementById('screen-inter'),
-            game: document.getElementById('screen-game'),
-            resultsSummary: document.getElementById('screen-game-results'),
-            post: document.getElementById('screen-post-survey'),
-            end: document.getElementById('screen-end'),
-            debug: document.getElementById('debug-menu'),
-            modal: document.getElementById('modal-confirm')
-        };
-
-        const modes = {
-            1: { theme: 'theme-simple', juicy: false, sound: false, label: "ルールのみ" },
-            2: { theme: 'theme-farm',   juicy: false, sound: false, label: "グラフィック追加" },
-            3: { theme: 'theme-farm',   juicy: true,  sound: false, label: "演出追加" },
-            4: { theme: 'theme-farm',   juicy: true,  sound: true,  label: "サウンド追加" }
-        };
-
-        function switchScreen(id) {
-            Object.values(screens).forEach(s => { if(s && s.id !== 'modal-confirm') s.classList.add('hidden'); });
-            if (screens[id]) screens[id].classList.remove('hidden');
+        function playSound(sound) {
+            sound.currentTime = 0;
+            sound.play().catch(() => {});
         }
 
-        function createLikertHTML(name, labels = ["1", "2", "3", "4", "5"]) {
-            return `<div class="likert-container">${[1, 2, 3, 4, 5].map(v => `<label class="likert-item"><span class="likert-label">${labels[v-1] || '　'}</span><span class="likert-num">${v}</span><input type="radio" name="${name}" value="${v}" ${v === 3 ? 'checked' : ''}></label>`).join('')}</div>`;
-        }
+        // --- Game Logic ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const bestScoreEl = document.getElementById('best-score');
+        const timerEl = document.getElementById('timer');
+        const heatBarEl = document.getElementById('heat-bar');
+        const heatWarningEl = document.getElementById('heat-warning');
+        const finalScoreEl = document.getElementById('final-score');
+        const finalMissEl = document.getElementById('final-miss');
+        const finalOverheatEl = document.getElementById('final-overheat');
+        const resultScreen = document.getElementById('screen-result');
+        const newRecordEl = document.getElementById('new-record');
 
-        // Sequential 4-digit ID (0000 - 9999) 発行
-        window.handleStartClick = async () => {
-            if (!user) { alert("認証が完了していません。接続を確認してください。"); return; }
-            const startBtn = document.getElementById('start-survey-btn');
-            startBtn.disabled = true;
-            startBtn.innerText = "ID発行中...";
+        let gameState = 'title';
+        let score = 0;
+        let timeLeft = 30;
+        let gameMode = 1;
+        let spawnIntervalId = null;
+        let timerIntervalId = null;
+        let animationFrameId = null;
+        let isCollisionEnabled = false;
 
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            bgmAudio.load();
+        const stars = [];
+        const starColors = ['#ffffff', '#afeeee', '#fffacd', '#ffb6c1', '#00f2ff'];
 
-            try {
-                const counterRef = doc(db, 'artifacts', customAppId, 'public', 'data', 'counter', 'state');
-                const newId = await runTransaction(db, async (transaction) => {
-                    const counterDoc = await transaction.get(counterRef);
-                    let currentCount = 0;
-                    if (counterDoc.exists()) {
-                        currentCount = counterDoc.data().count || 0;
-                    }
-                    const nextCount = currentCount + 1;
-                    transaction.set(counterRef, { count: nextCount });
-                    return currentCount; 
+        function initStars() {
+            stars.length = 0;
+            const w = canvas.width || window.innerWidth;
+            const h = canvas.height || window.innerHeight;
+            for (let i = 0; i < 100; i++) {
+                stars.push({
+                    x: Math.random() * w,
+                    y: Math.random() * h,
+                    size: Math.random() * 2,
+                    color: starColors[Math.floor(Math.random() * starColors.length)],
+                    opacity: Math.random(),
+                    speed: 0.01 + Math.random() * 0.03
                 });
-
-                sessionData.studentId = newId.toString().padStart(4, '0');
-                userRoute = Math.random() < 0.5 ? 'A' : 'B';
-                routeSteps = userRoute === 'A' ? [1, 2, 3, 4] : [4, 3, 2, 1];
-                
-                ["q1", "q2", "q3_rule", "q3_graphic", "q3_effect", "q3_sound"].forEach(id => {
-                    const container = document.getElementById(`likert-${id.replace(/_/g,'-')}`);
-                    if (container) {
-                        let labels = ["ほとんど遊ばない", "　", "　", "　", "良く遊ぶ"];
-                        if (id === "q2") labels = ["苦手", "　", "　", "　", "得意"];
-                        else if (id !== "q1") labels = ["影響しない", "　", "　", "　", "影響する"];
-                        container.innerHTML = createLikertHTML(id, labels);
-                    }
-                });
-                switchScreen('pre');
-            } catch (err) {
-                alert("IDの発行に失敗しました。再試行してください。");
-                startBtn.disabled = false;
-                startBtn.innerText = "調査を開始する";
-            }
-        };
-
-        window.commitPreSurvey = () => {
-            sessionData.pre = { 
-                freq: document.querySelector('input[name="q1"]:checked').value, 
-                skill: document.querySelector('input[name="q2"]:checked').value,
-                influence: {
-                    rule: document.querySelector('input[name="q3_rule"]:checked').value,
-                    graphic: document.querySelector('input[name="q3_graphic"]:checked').value,
-                    effect: document.querySelector('input[name="q3_effect"]:checked').value,
-                    sound: document.querySelector('input[name="q3_sound"]:checked').value
-                }
-            };
-            showInter();
-        };
-
-        function showInter() {
-            const mId = routeSteps[currentStepIndex];
-            document.getElementById('inter-desc').innerHTML = `次は <b>モード ${mId}</b> です。<br><span class="text-slate-400 text-sm uppercase">(${modes[mId].label})</span><br><br>30秒間のプレイを開始します。`;
-            switchScreen('inter');
-        }
-
-        window.launchMode = () => { setupGame(routeSteps[currentStepIndex]); switchScreen('game'); };
-
-        function setupGame(modeId) {
-            isPlaying = true; score = 0; timerVal = 30;
-            bgmAudio.pause(); bgmAudio.currentTime = 0;
-            const mode = modes[modeId];
-            document.getElementById('main-body').className = `${mode.theme} flex items-center justify-center p-4`;
-            document.getElementById('mode-badge').textContent = `MODE ${modeId}`;
-            document.getElementById('score-val').textContent = "0";
-            document.querySelectorAll('.mole').forEach(m => {
-                m.className = `mole ${mode.juicy ? 'juicy-move' : 'standard-move'}`;
-                m.classList.remove('up'); m.innerHTML = '';
-                m.appendChild(document.getElementById('mole-template').content.cloneNode(true));
-            });
-            if (modeId === 4) {
-                if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-                setTimeout(() => { if(isPlaying) bgmAudio.play().catch(() => {}); }, 150);
-            }
-            gameLoop();
-            timerId = setInterval(() => { timerVal--; document.getElementById('timer-val').textContent = `${timerVal}s`; if (timerVal <= 0) stopGame(modeId); }, 1000);
-        }
-
-        async function gameLoop() {
-            // 全モードで出現期待値を1.0秒間隔に統一
-            while (isPlaying) {
-                const count = Math.floor(Math.random() * 2) + 1; 
-                const molesArr = Array.from(document.querySelectorAll('.mole:not(.up)'));
-                molesArr.sort(() => 0.5 - Math.random()).slice(0, count).forEach((mole, i) => {
-                    setTimeout(() => { if (isPlaying) peep(mole); }, i * 200);
-                });
-                await new Promise(r => setTimeout(r, 800 + Math.random() * 400)); // 平均1000ms
             }
         }
 
-        function peep(mole) {
-            const isBonus = Math.random() < 0.25;
-            mole.innerHTML = ''; mole.appendChild(document.getElementById(isBonus ? 'bonus-mole-template' : 'mole-template').content.cloneNode(true));
-            mole.dataset.type = isBonus ? 'bonus' : 'normal'; mole.classList.add('up');
-            // 表示時間（ヒット可能時間）を全モードで1000msに固定
-            setTimeout(() => { if (mole) mole.classList.remove('up'); }, 1000);
-        }
-
-        function stopGame(modeId) {
-            isPlaying = false; clearInterval(timerId); bgmAudio.pause();
-            sessionData.scores[modeId] = score;
-            currentStepIndex++;
-            if (currentStepIndex < 4) showInter();
-            else showResultsSummary();
-        }
-
-        function showResultsSummary() {
-            const container = document.getElementById('results-summary-list'); container.innerHTML = '';
-            routeSteps.forEach((m, idx) => {
-                container.innerHTML += `<div class="flex justify-between items-center bg-white p-5 rounded-2xl border-2 border-slate-100 shadow-sm"><div class="flex flex-col text-left"><span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${idx + 1}回目</span><span class="font-black text-slate-800 text-lg">モード ${m}</span></div><div class="text-right"><span class="text-4xl font-black text-slate-900">${sessionData.scores[m] || 0}</span><span class="text-xs font-black text-slate-400 ml-1">pts</span></div></div>`;
-            });
-            switchScreen('resultsSummary');
-        }
-
-        window.showPostSurvey = () => {
-            const q4cont = document.getElementById('q4-container'); q4cont.innerHTML = '';
-            [1,2,3,4].forEach(m => { 
-                q4cont.innerHTML += `<div class="bg-slate-50 p-8 rounded-[2rem] border-2 border-slate-100 text-center">
-                    <p class="text-xs font-black text-slate-400 mb-8 uppercase tracking-widest text-center">モード${m}評価</p>
-                    ${createLikertHTML(`q4_${m}`, ["つまらなかった", "　", "　", "　", "おもしろかった"])}
-                </div>`; 
-            });
-            const selects = [document.getElementById('r1'), document.getElementById('r2'), document.getElementById('r3'), document.getElementById('r4')];
-            selects.forEach(s => { 
-                s.innerHTML = '<option value="">選択してください</option>'; 
-                [1,2,3,4].forEach(m => { 
-                    const opt = document.createElement('option'); opt.value = m; opt.textContent = `モード ${m} (${modes[m].label.split(' ')[0]})`; s.appendChild(opt); 
-                }); 
-            });
-            const q6cont = document.getElementById('q6-container'); q6cont.innerHTML = '';
-            ["rule", "graphic", "effect", "sound"].forEach(k => {
-                const l = {rule:"ルール", graphic:"グラフィック", effect:"エフェクト", sound:"サウンド"}[k];
-                q6cont.innerHTML += `<div class="bg-slate-50 p-8 rounded-[2.5rem] border-2 border-slate-100 text-center">
-                    <p class="text-xs font-black text-slate-400 mb-8 uppercase tracking-widest text-center">${l}</p>
-                    ${createLikertHTML(`q6_${k}`, ["影響しない", "　", "　", "　", "影響した"])}
-                </div>`;
-            });
-            const isA = userRoute === 'A';
-            const q7label = document.getElementById('q7-label');
-            q7label.textContent = isA ? "Q7. 要素追加によりおもしろさは増加しましたか？" : "Q7. 要素削減によりおもしろさは減少しましたか？";
-            const q7cont = document.getElementById('q7-container'); q7cont.innerHTML = '';
-            const pairs = isA ? 
-                [{f:1,t:2,l:"グラフィック追加"},{f:2,t:3,l:"エフェクト追加"},{f:3,t:4,l:"サウンド追加"}] : 
-                [{f:4,t:3,l:"サウンド削減"},{f:3,t:2,l:"エフェクト削減"},{f:2,t:1,l:"グラフィック削減"}];
-            pairs.forEach(p => { 
-                q7cont.innerHTML += `<div class="bg-slate-50 p-8 rounded-[2.5rem] border-2 border-slate-100 text-center">
-                    <p class="text-xs font-black text-slate-400 mb-8 uppercase tracking-widest text-center">${p.f}→${p.t} (${p.l})</p>
-                    ${createLikertHTML(`q7_${p.f}`)}
-                </div>`; 
-            });
-            switchScreen('post');
-        };
-
-        window.finalSubmit = async () => {
-            const btn = document.getElementById('final-submit-btn');
-            const rankInputs = [document.getElementById('r1').value, document.getElementById('r2').value, document.getElementById('r3').value, document.getElementById('r4').value];
-            const uniqueRanks = new Set(rankInputs.filter(r => r !== ""));
-            if (uniqueRanks.size < 4) { document.getElementById('q5-error').classList.remove('hidden'); return; }
-            
-            btn.disabled = true; btn.textContent = "データを送信中...";
-            try {
-                const confirmedUser = user || await signInAnonymously(auth);
-                const post = { q4: {}, q5: rankInputs, q6: {}, q7: {}, free: document.getElementById('free-ans').value };
-                [1,2,3,4].forEach(m => post.q4[m] = document.querySelector(`input[name="q4_${m}"]:checked`).value);
-                ["rule", "graphic", "effect", "sound"].forEach(k => post.q6[k] = document.querySelector(`input[name="q6_${k}"]:checked`).value);
-                const steps = userRoute === 'A' ? [1,2,3] : [4,3,2];
-                steps.forEach(s => post.q7[s] = document.querySelector(`input[name="q7_${s}"]:checked`).value);
-                await addDoc(collection(db, 'artifacts', customAppId, 'public', 'data', 'results'), { 
-                    ...sessionData, post, timestamp: serverTimestamp(), route: userRoute, userId: confirmedUser.uid, game_type: "mole_v9_41" 
-                }); 
-                switchScreen('end'); 
-            } catch (err) { 
-                alert("送信失敗: " + err.message); btn.disabled = false; btn.textContent = "再送信"; 
-            }
-        };
-
-        function whack(e) {
-            if (!this.classList.contains('up')) return;
-            const isBonus = this.dataset.type === 'bonus';
-            const mId = routeSteps[currentStepIndex] || 1;
-            score += isBonus ? 10 : 1; 
-            this.classList.remove('up'); 
-            document.getElementById('score-val').textContent = score;
-            const clientX = e.type.startsWith('touch') ? (e.touches[0] || e.changedTouches[0]).clientX : e.clientX;
-            const clientY = e.type.startsWith('touch') ? (e.touches[0] || e.changedTouches[0]).clientY : e.clientY;
-            if (modes[mId].juicy) {
-                document.getElementById('main-body').classList.add('shake-active');
-                setTimeout(() => document.getElementById('main-body').classList.remove('shake-active'), 200);
-                showJuicyPopup(clientX, clientY, isBonus ? 10 : 1);
+        function toggleCollision() {
+            isCollisionEnabled = !isCollisionEnabled;
+            const btn = document.getElementById('collision-toggle');
+            const icon = document.getElementById('toggle-icon');
+            const text = document.getElementById('toggle-text');
+            if (isCollisionEnabled) {
+                btn.classList.add('active');
+                text.innerText = "ON (危険)";
+                icon.innerHTML = `<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:currentColor;"><path d="M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10 10-4.49 10-10S17.51 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3-8c0 1.66-1.34 3-3 3s-3-1.34-3-3 1.34-3 3-3 3 1.34 3 3z"/></svg>`;
             } else {
-                showSoberPopup(clientX, clientY, isBonus ? 10 : 1);
+                btn.classList.remove('active');
+                text.innerText = "OFF (安全)";
+                icon.innerHTML = `<svg viewBox="0 0 24 24" style="width:24px;height:24px;fill:currentColor;"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>`;
             }
-            if (modes[mId].sound) playTone(isBonus);
-            if (e.type.startsWith('touch')) e.preventDefault();
         }
 
-        function playTone(isBonus) {
-            if (!audioCtx) return;
-            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.frequency.setValueAtTime(isBonus ? 950 : 440, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(isBonus ? 2000 : 100, audioCtx.currentTime + 0.15);
-            gain.gain.setValueAtTime(0.4, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
-        }
-
-        function showJuicyPopup(x, y, pts) {
-            const p = document.createElement('div'); p.className = `score-popup-juicy`;
-            p.textContent = `+${pts}`; p.style.left = `${x}px`; p.style.top = `${y}px`;
-            document.body.appendChild(p); setTimeout(() => p.remove(), 600);
-        }
-
-        function showSoberPopup(x, y, pts) {
-            const p = document.createElement('div'); p.className = `score-popup-sober`;
-            p.textContent = `+${pts}`; p.style.left = `${x}px`; p.style.top = `${y}px`;
-            document.body.appendChild(p); setTimeout(() => p.remove(), 500);
-        }
-
-        // リセット機能: 結果データ全削除 + IDカウンターを0にリセット
-        window.executeDataReset = async () => {
-            const resetBtn = document.getElementById('execute-reset-btn');
-            resetBtn.disabled = true; resetBtn.innerText = "リセット中...";
+        // フルスクリーン管理ロジック
+        async function toggleFullScreen() {
             try {
-                const snap = await getDocs(collection(db, 'artifacts', customAppId, 'public', 'data', 'results'));
-                await Promise.all(snap.docs.map(d => deleteDoc(doc(db, 'artifacts', customAppId, 'public', 'data', 'results', d.id))));
-                await setDoc(doc(db, 'artifacts', customAppId, 'public', 'data', 'counter', 'state'), { count: 0 });
-                alert("削除・ID初期化完了"); location.reload();
-            } catch (e) { alert("リセット失敗"); resetBtn.disabled = false; }
-        };
+                const doc = window.document;
+                const docEl = doc.documentElement;
+                
+                // 現在フルスクリーンかどうかを判定
+                const isFull = !!(doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement);
 
-        window.triggerCSVDownload = async () => {
-            try {
-                const snap = await getDocs(collection(db, 'artifacts', customAppId, 'public', 'data', 'results'));
-                if (snap.empty) { alert("データなし"); return; }
-                let csv = "\uFEFF発行ID,ルート,日時,Mode1点,Mode2点,Mode3点,Mode4点,事前Q1,事前Q2,Q4_M1,Q4_M2,Q4_M3,Q4_M4,Q5_1,Q5_2,Q5_3,Q5_4,Q6_Rule,Q6_Graph,Q6_Eff,Q6_Snd,Q7_P1,Q7_P2,Q7_P3,自由記述\n";
-                snap.forEach(docSnap => {
-                    const d = docSnap.data();
-                    let dateStr = d.timestamp ? d.timestamp.toDate().toLocaleString() : "";
-                    const row = [d.studentId||"", d.route||"", dateStr, d.scores?.["1"]||0, d.scores?.["2"]||0, d.scores?.["3"]||0, d.scores?.["4"]||0, d.pre?.freq||3, d.pre?.skill||3, d.post?.q4?.["1"]||3, d.post?.q4?.["2"]||3, d.post?.q4?.["3"]||3, d.post?.q4?.["4"]||3, d.post?.q5?.[0]||"", d.post?.q5?.[1]||"", d.post?.q5?.[2]||"", d.post?.q5?.[3]||"", d.post?.q6?.rule||3, d.post?.q6?.graphic||3, d.post?.q6?.effect||3, d.post?.q6?.sound||3, d.post?.q7?.["1"]||d.post?.q7?.["4"]||3, d.post?.q7?.["2"]||d.post?.q7?.["3"]||3, d.post?.q7?.["3"]||d.post?.q7?.["2"]||3, `"${(d.post?.free||"").replace(/"/g,'""')}"`];
-                    csv += row.join(",") + "\n";
-                });
-                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `mole_v941_results.csv`;
-                link.click();
-            } catch (err) { alert("CSV取得失敗: " + err.message); }
-        };
+                if (!isFull) {
+                    // フルスクリーンではない場合 -> リクエスト
+                    const request = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+                    if (request) {
+                        await request.call(docEl);
+                    }
+                } else {
+                    // フルスクリーンである場合 -> 解除
+                    const exit = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+                    if (exit) {
+                        await exit.call(doc);
+                    }
+                }
+            } catch (err) {
+                console.warn("Fullscreen toggle failed:", err.message);
+            }
+        }
 
-        window.addEventListener('keydown', e => {
-            if (e.shiftKey && e.key.toUpperCase() === 'M') screens.debug.classList.toggle('hidden');
-            if (e.shiftKey && e.key.toUpperCase() === 'D') triggerCSVDownload();
-            if (e.shiftKey && e.key.toUpperCase() === 'R') openConfirmModal();
-        }, true);
+        // フルスクリーン状態に応じてUIを更新する
+        function updateFullscreenUI() {
+            const isFull = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+            const btns = document.querySelectorAll('.btn-fullscreen-toggle');
+            
+            btns.forEach(btn => {
+                if (isFull) {
+                    btn.innerText = "フルスクリーンを解除";
+                    btn.style.borderColor = "#ff4d4d"; // 解除時は赤っぽく
+                    btn.style.color = "#ff4d4d";
+                } else {
+                    btn.innerText = "フルスクリーンにする";
+                    btn.style.borderColor = "#00f2ff"; // 通常時はアクセントカラー
+                    btn.style.color = "#00f2ff";
+                }
+            });
+            
+            // 画面リサイズを少し遅らせて適用
+            setTimeout(resize, 300);
+        }
 
-        window.debugJump = (mId) => { screens.debug.classList.add('hidden'); isPlaying = false; clearInterval(timerId); bgmAudio.pause(); currentStepIndex = 999; setupGame(mId); switchScreen('game'); };
-        window.openConfirmModal = () => screens.modal.classList.remove('hidden');
-        window.closeConfirmModal = () => screens.modal.classList.add('hidden');
-
-        document.querySelectorAll('.mole').forEach(m => {
-            m.addEventListener('mousedown', whack); m.addEventListener('touchstart', whack, { passive: false });
+        // 各種フルスクリーン変更イベントを監視
+        ['fullscreenchange', 'webkitfullscreenchange', 'mozfullscreenchange', 'MSFullscreenChange'].forEach(event => {
+            document.addEventListener(event, updateFullscreenUI);
         });
-        document.getElementById('game-board').addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+
+        let missCount = 0;
+        let overheatCount = 0;
+
+        const player = {
+            x: 0, y: 0, radius: 18, baseSpeed: 6.5,
+            vx: 0, vy: 0, angle: 0, color: '#00f2ff',
+            lastFireTime: 0, fireInterval: 120,
+            heat: 0, isOverheated: false,
+            heatIncreasePerShot: 4.8, coolDownRate: 0.35, overheatCoolDownRate: 0.5
+        };
+
+        const joystick = { active: false, pointerId: null, originX: 0, originY: 0, vectorX: 0, vectorY: 0, maxRadius: 45 };
+        let actionPressed = false;
+        const bullets = [];
+        const enemies = [];
+        const particles = [];
+        const enemyTypes = [
+            { type: 'S', size: 14, speed: 4.5, score: 50, color: '#ff4d4d' },
+            { type: 'M', size: 24, speed: 3.0, score: 30, color: '#f1c40f' },
+            { type: 'L', size: 38, speed: 1.8, score: 10, color: '#2ecc71' }
+        ];
+
+        const keys = { up: false, down: false, left: false, right: false };
+
+        function resize() {
+            if (!canvas.parentElement) return;
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            initStars();
+            if (player.x === 0 || gameState === 'title') {
+                player.x = canvas.width / 2;
+                player.y = canvas.height / 2;
+            }
+        }
+        window.addEventListener('resize', () => setTimeout(resize, 200));
+
+        function createControls(mode) {
+            const left = document.getElementById('left-panel');
+            const right = document.getElementById('right-panel');
+            left.innerHTML = ''; right.innerHTML = '';
+            const joy = `<div class="joystick-base" id="joystick-base"><div class="joystick-thumb" id="joystick-thumb"></div></div>`;
+            const act = `<div class="btn-action" id="btn-action">FIRE</div>`;
+            if (mode === 1) { left.innerHTML = joy; right.innerHTML = act; }
+            else { left.innerHTML = act; right.innerHTML = joy; }
+            setupJoystickListeners();
+            setupActionBtnListener();
+        }
+
+        function setupJoystickListeners() {
+            const base = document.getElementById('joystick-base');
+            const thumb = document.getElementById('joystick-thumb');
+            if (!base || !thumb) return;
+            base.addEventListener('pointerdown', (e) => {
+                e.preventDefault();
+                const rect = base.getBoundingClientRect();
+                joystick.originX = rect.left + rect.width / 2;
+                joystick.originY = rect.top + rect.height / 2;
+                joystick.active = true; joystick.pointerId = e.pointerId;
+            });
+            window.addEventListener('pointermove', (e) => {
+                if (!joystick.active || e.pointerId !== joystick.pointerId) return;
+                let dx = e.clientX - joystick.originX;
+                let dy = e.clientY - joystick.originY;
+                const dist = Math.hypot(dx, dy);
+                if (dist > joystick.maxRadius) { dx = (dx / dist) * joystick.maxRadius; dy = (dy / dist) * joystick.maxRadius; }
+                joystick.vectorX = dx / joystick.maxRadius;
+                joystick.vectorY = dy / joystick.maxRadius;
+                thumb.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+            });
+            const handleEnd = (e) => {
+                if (e && e.pointerId !== joystick.pointerId) return;
+                joystick.active = false; joystick.vectorX = 0; joystick.vectorY = 0;
+                thumb.style.transform = `translate(-50%, -50%)`;
+            };
+            window.addEventListener('pointerup', handleEnd);
+            window.addEventListener('pointercancel', handleEnd);
+        }
+
+        function setupActionBtnListener() {
+            const btn = document.getElementById('btn-action');
+            if (!btn) return;
+            btn.addEventListener('pointerdown', (e) => { e.preventDefault(); actionPressed = true; });
+            btn.addEventListener('pointerup', (e) => { e.preventDefault(); actionPressed = false; });
+            btn.addEventListener('pointerleave', (e) => { e.preventDefault(); actionPressed = false; });
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (['ArrowUp','w'].includes(e.key)) keys.up = true;
+            if (['ArrowDown','s'].includes(e.key)) keys.down = true;
+            if (['ArrowLeft','a'].includes(e.key)) keys.left = true;
+            if (['ArrowRight','d'].includes(e.key)) keys.right = true;
+            if ([' ','Enter'].includes(e.key)) actionPressed = true;
+        });
+        window.addEventListener('keyup', (e) => {
+            if (['ArrowUp','w'].includes(e.key)) keys.up = false;
+            if (['ArrowDown','s'].includes(e.key)) keys.down = false;
+            if (['ArrowLeft','a'].includes(e.key)) keys.left = false;
+            if (['ArrowRight','d'].includes(e.key)) keys.right = false;
+            if ([' ','Enter'].includes(e.key)) actionPressed = false;
+        });
+
+        function spawnEnemy() {
+            if (gameState !== 'playing') return;
+            const type = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+            let x, y;
+            const side = Math.floor(Math.random() * 4);
+            if (side === 0) { x = Math.random() * canvas.width; y = -50; }
+            else if (side === 1) { x = Math.random() * canvas.width; y = canvas.height + 50; }
+            else if (side === 2) { x = -50; y = Math.random() * canvas.height; }
+            else { x = canvas.width + 50; y = Math.random() * canvas.height; }
+            const angle = Math.atan2((canvas.height/2)-y, (canvas.width/2)-x) + (Math.random()-0.5)*0.4;
+            enemies.push({ x, y, vx: Math.cos(angle)*type.speed, vy: Math.sin(angle)*type.speed, ...type });
+        }
+
+        function startGame(mode) {
+            gameMode = mode;
+            gameState = 'playing';
+            score = 0; timeLeft = 30; missCount = 0; overheatCount = 0;
+            
+            sounds.bgm.currentTime = 0;
+            sounds.bgm.play().catch(() => {});
+
+            if (spawnIntervalId) clearInterval(spawnIntervalId);
+            if (timerIntervalId) clearInterval(timerIntervalId);
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+
+            particles.length = 0; enemies.length = 0; bullets.length = 0;
+            player.x = canvas.width / 2; player.y = canvas.height / 2;
+            player.heat = 0; player.isOverheated = false;
+            
+            timerEl.innerText = timeLeft;
+            scoreEl.innerText = score;
+            bestScoreEl.innerText = localStorage.getItem('bestScore_mode' + mode) || 0;
+            document.getElementById('screen-title').style.display = 'none';
+            createControls(mode);
+            resize();
+            
+            spawnIntervalId = setInterval(spawnEnemy, 750);
+            timerIntervalId = setInterval(() => {
+                if (gameState === 'gameover') return; 
+                timeLeft--;
+                timerEl.innerText = timeLeft;
+                if (timeLeft <= 0) endGame();
+            }, 1000);
+
+            animationFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        function endGame() {
+            gameState = 'gameover';
+            sounds.bgm.pause();
+            finalScoreEl.innerText = score;
+            finalOverheatEl.innerText = overheatCount;
+            if (isCollisionEnabled) {
+                document.getElementById('miss-stat').style.display = 'flex';
+                finalMissEl.innerText = missCount;
+            } else {
+                document.getElementById('miss-stat').style.display = 'none';
+            }
+            if (spawnIntervalId) clearInterval(spawnIntervalId);
+            if (timerIntervalId) clearInterval(timerIntervalId);
+            const savedBest = parseInt(localStorage.getItem('bestScore_mode' + gameMode)) || 0;
+            if (score > savedBest) { localStorage.setItem('bestScore_mode' + gameMode, score); newRecordEl.style.display = 'block'; }
+            else { newRecordEl.style.display = 'none'; }
+            resultScreen.style.display = 'block';
+        }
+
+        function update() {
+            stars.forEach(star => {
+                star.opacity += star.speed;
+                if (star.opacity > 1 || star.opacity < 0.1) star.speed *= -1;
+            });
+
+            if (gameState === 'hit' || gameState === 'gameover') {
+                particles.forEach((p, i) => { p.x += p.vx; p.y += p.vy; p.life -= 0.035; if (p.life <= 0) particles.splice(i, 1); });
+                return;
+            }
+            if (gameState !== 'playing') return;
+
+            if (player.isOverheated) { player.heat -= player.overheatCoolDownRate; if (player.heat <= 5) { player.heat = 0; player.isOverheated = false; } }
+            else if (!actionPressed) { player.heat = Math.max(0, player.heat - player.coolDownRate); }
+            heatBarEl.style.width = player.heat + '%';
+            heatBarEl.style.background = player.isOverheated ? 'var(--danger-color)' : (player.heat > 70 ? '#ffeb3b' : 'var(--heat-color)');
+            heatWarningEl.style.visibility = player.isOverheated ? 'visible' : 'hidden';
+
+            let inputX = joystick.vectorX;
+            let inputY = joystick.vectorY;
+            if (!joystick.active) {
+                if (keys.left) inputX = -1;
+                if (keys.right) inputX = 1;
+                if (keys.up) inputY = -1;
+                if (keys.down) inputY = 1;
+                if (inputX !== 0 && inputY !== 0) { inputX *= 0.707; inputY *= 0.707; }
+            }
+
+            player.x += inputX * player.baseSpeed;
+            player.y += inputY * player.baseSpeed;
+            player.x = Math.max(player.radius, Math.min(canvas.width - player.radius, player.x));
+            player.y = Math.max(player.radius, Math.min(canvas.height - player.radius, player.y));
+            if (Math.hypot(inputX, inputY) > 0.1) player.angle = Math.atan2(inputY, inputX);
+            
+            if (actionPressed) {
+                const now = Date.now();
+                if (!player.isOverheated && now - player.lastFireTime >= player.fireInterval) {
+                    bullets.push({ x: player.x + Math.cos(player.angle) * 20, y: player.y + Math.sin(player.angle) * 20, vx: Math.cos(player.angle) * 11, vy: Math.sin(player.angle) * 11 });
+                    player.lastFireTime = now; player.heat += player.heatIncreasePerShot;
+                    playSound(sounds.shoot);
+                    if (player.heat >= 100) { player.heat = 100; player.isOverheated = true; overheatCount++; }
+                }
+            }
+
+            bullets.forEach((b, i) => { b.x += b.vx; b.y += b.vy; if (b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) bullets.splice(i, 1); });
+            
+            enemies.forEach((e, i) => {
+                e.x += e.vx; e.y += e.vy;
+                if (isCollisionEnabled && Math.hypot(e.x - player.x, e.y - player.y) < player.radius + e.size * 0.7) {
+                    gameState = 'hit';
+                    missCount++;
+                    playSound(sounds.playerDeath);
+                    for(let k=0; k<25; k++) particles.push({ x: player.x, y: player.y, vx: (Math.random()-0.5)*7, vy: (Math.random()-0.5)*7, life: 1, color: player.color });
+                    setTimeout(() => { if (gameState !== 'gameover') gameState = 'playing'; enemies.length = 0; bullets.length = 0; player.x = canvas.width/2; player.y = canvas.height/2; }, 1000); 
+                    return;
+                }
+                bullets.forEach((b, j) => { 
+                    if (Math.hypot(e.x - b.x, e.y - b.y) < e.size) { 
+                        score += e.score; 
+                        scoreEl.innerText = score; 
+                        if (e.type === 'L') playSound(sounds.damageGreen);
+                        else if (e.type === 'M') playSound(sounds.damageYellow);
+                        else playSound(sounds.damageRed);
+                        for(let k=0; k<12; k++) particles.push({x:e.x, y:e.y, vx:(Math.random()-0.5)*7, vy:(Math.random()-0.5)*7, life:1, color:e.color}); 
+                        enemies.splice(i, 1); bullets.splice(j, 1); 
+                    } 
+                });
+                if (e.x < -100 || e.x > canvas.width + 100 || e.y < -100 || e.y > canvas.height + 100) enemies.splice(i, 1);
+            });
+            particles.forEach((p, i) => { p.x += p.vx; p.y += p.vy; p.life -= 0.035; if (p.life <= 0) particles.splice(i, 1); });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            stars.forEach(star => {
+                ctx.globalAlpha = star.opacity; ctx.fillStyle = star.color; ctx.beginPath(); ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2); ctx.fill();
+            });
+            ctx.globalAlpha = 1.0;
+            bullets.forEach(b => { ctx.beginPath(); ctx.arc(b.x, b.y, 4, 0, Math.PI*2); ctx.fillStyle='#fff'; ctx.shadowBlur=10; ctx.shadowColor='#0ff'; ctx.fill(); ctx.shadowBlur=0; });
+            enemies.forEach(e => { ctx.save(); ctx.translate(e.x, e.y); ctx.rotate(Math.atan2(e.vy, e.vx)); ctx.fillStyle=e.color; ctx.beginPath(); ctx.moveTo(e.size, 0); ctx.lineTo(-e.size/2, e.size/2); ctx.lineTo(-e.size/2, -e.size/2); ctx.closePath(); ctx.fill(); ctx.restore(); });
+            particles.forEach(p => { ctx.globalAlpha = p.life; ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, 2, 0, Math.PI*2); ctx.fill(); });
+            ctx.globalAlpha = 1.0;
+            if (gameState === 'playing') {
+                ctx.save(); ctx.translate(player.x, player.y); ctx.rotate(player.angle);
+                if (!isCollisionEnabled) { ctx.globalAlpha = 0.8; ctx.strokeStyle = player.color; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(0, 0, player.radius + 5, 0, Math.PI*2); ctx.stroke(); }
+                ctx.fillStyle = player.isOverheated ? '#444' : player.color;
+                ctx.beginPath(); ctx.moveTo(player.radius, 0); ctx.lineTo(-player.radius, player.radius); ctx.lineTo(-player.radius/2, 0); ctx.lineTo(-player.radius, -player.radius); ctx.closePath();
+                if (!player.isOverheated) { ctx.shadowBlur = isCollisionEnabled ? 15 : 25; ctx.shadowColor = player.color; }
+                ctx.fill(); ctx.restore();
+            }
+        }
+
+        function gameLoop() {
+            update(); draw();
+            if (gameState !== 'gameover') animationFrameId = requestAnimationFrame(gameLoop);
+        }
+        window.onload = function() {
+            resize();
+            updateFullscreenUI();
+            window.scrollTo(0, 1);
+        };
     </script>
 </body>
 </html>
