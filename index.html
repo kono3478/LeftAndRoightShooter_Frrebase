@@ -1,4 +1,4 @@
-<!DOCTYPE html>　
+<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -116,6 +116,10 @@
         .btn-submit:disabled { opacity:.4;cursor:not-allowed; }
         .btn-skip { flex:1;background:rgba(255,255,255,.08);color:#777;border:1px solid #333;padding:14px;border-radius:50px;font-size:13px;cursor:pointer; }
         .uploading-msg { color:#888;font-size:13px;margin-top:10px;min-height:18px; }
+        .hand-label { color:#888;font-size:12px;margin:14px 0 8px 0;text-align:left;width:100%;letter-spacing:1px; }
+        .hand-btns { display:flex;gap:8px;width:100%; }
+        .hand-btn { flex:1;padding:10px 6px;border-radius:12px;font-size:13px;font-weight:bold;cursor:pointer;background:rgba(255,255,255,.06);border:2px solid #333;color:#777;transition:all .2s;text-align:center; }
+        .hand-btn.selected { background:rgba(0,242,255,.15);border-color:var(--accent-color);color:var(--accent-color); }
 
         @media(max-width:768px){.menu-layout{flex-direction:column;gap:15px;}.menu-section{padding:15px;}}
     </style>
@@ -156,6 +160,12 @@
         <p>スコアをランキングに登録しますか？</p>
         <div class="score-preview" id="modal-score">0</div>
         <input id="nickname-input" type="text" maxlength="12" placeholder="ニックネーム (最大12文字)" autocomplete="off" spellcheck="false">
+        <div class="hand-label">🖐 利き手</div>
+        <div class="hand-btns">
+            <div class="hand-btn" id="hand-right" onclick="selectHand('right')">右利き</div>
+            <div class="hand-btn" id="hand-left"  onclick="selectHand('left')">左利き</div>
+            <div class="hand-btn" id="hand-both"  onclick="selectHand('both')">両利き</div>
+        </div>
         <div class="modal-btns">
             <button class="btn-submit" id="btn-submit-score" onclick="submitScore()">🚀 登録する</button>
             <button class="btn-skip" onclick="skipRegistration()">スキップ</button>
@@ -223,9 +233,19 @@ const db  = getDatabase(app);
 let pendingScore = 0, pendingMode = 1, pendingCollision = false;
 let pendingOverheat = 0, pendingMiss = 0;
 
+window.selectHand = function(hand) {
+    ['right','left','both'].forEach(h => {
+        document.getElementById('hand-'+h).classList.toggle('selected', h===hand);
+    });
+    window._selectedHand = hand;
+};
+
 window._openNicknameModal = (sc, mode, collision, overheat, miss) => {
     pendingScore=sc; pendingMode=mode; pendingCollision=!!collision;
     pendingOverheat=overheat||0; pendingMiss=miss||0;
+    // 利き手リセット
+    window._selectedHand = null;
+    ['right','left','both'].forEach(h => document.getElementById('hand-'+h).classList.remove('selected'));
     document.getElementById('modal-score').textContent = Number(sc).toLocaleString();
     document.getElementById('nickname-input').value = localStorage.getItem('lastNickname')||'';
     document.getElementById('uploading-msg').textContent = '';
@@ -241,6 +261,16 @@ window.submitScore = async () => {
         inp.style.borderColor='var(--danger-color)';
         setTimeout(()=>inp.style.borderColor='rgba(0,242,255,.4)',1000); return;
     }
+    if (!window._selectedHand) {
+        ['right','left','both'].forEach(h => {
+            const el = document.getElementById('hand-'+h);
+            el.style.borderColor='var(--danger-color)';
+            setTimeout(()=>el.style.borderColor='#333',1000);
+        });
+        document.getElementById('uploading-msg').textContent='⚠️ 利き手を選択してください';
+        setTimeout(()=>document.getElementById('uploading-msg').textContent='',1500);
+        return;
+    }
     const btn=document.getElementById('btn-submit-score'), msg=document.getElementById('uploading-msg');
     btn.disabled=true; msg.textContent='登録中... 🚀';
     try {
@@ -248,6 +278,7 @@ window.submitScore = async () => {
             nickname: nick.slice(0,12), score: pendingScore,
             mode: pendingMode, collisionEnabled: pendingCollision,
             overheatCount: pendingOverheat, missCount: pendingMiss,
+            dominantHand: window._selectedHand,
             timestamp: serverTimestamp()
         });
         localStorage.setItem('lastNickname', nick);
