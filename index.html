@@ -2,219 +2,268 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>スペース・ディフェンダー - Firebase Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Defender - 管理画面</title>
     <style>
         :root {
-            --bg-color: #020205; --panel-color: #e0e0e0; --game-bg: #050510;
-            --accent-color: #00f2ff; --heat-color: #ff9f43; --danger-color: #ff4d4d;
-            --gold: #ffd700; --silver: #c0c0c0; --bronze: #cd7f32; --panel-border: #999;
+            --bg: #0a0a0f;
+            --surface: #12121a;
+            --border: rgba(0, 242, 255, 0.15);
+            --accent: #00f2ff;
+            --danger: #ff4d4d;
+            --warn: #ff9f43;
+            --success: #2ecc71;
+            --text: #e0e0e0;
+            --muted: #666;
         }
-        body, html {
-            margin:0;padding:0;width:100%;height:100%;height:100dvh;overflow:hidden;
-            background:var(--bg-color);font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
-            user-select:none;touch-action:none;-webkit-user-select:none;
-        }
-        #game-container { position:relative;width:100vw;height:100%;height:100dvh;display:flex;flex-direction:row;overflow:hidden; }
-        #orientation-warning {
-            position:fixed;top:0;left:0;width:100%;height:100%;background:#0f3460;color:white;
-            display:none;flex-direction:column;justify-content:center;align-items:center;z-index:9999;text-align:center;padding:20px;
-        }
-        @media (orientation:portrait){#orientation-warning{display:flex;}}
-
-        /* TITLE */
-        #screen-title {
-            position:absolute;top:0;left:0;width:100%;height:100%;
-            background:radial-gradient(circle at center,#1b1b2f 0%,#020205 100%);
-            display:flex;flex-direction:column;justify-content:center;align-items:center;
-            z-index:100;padding:20px;box-sizing:border-box;overflow-y:auto;gap:10px;
-        }
-        #screen-title h1 {
-            color:var(--accent-color);margin:0;font-size:clamp(28px,8vw,56px);
-            letter-spacing:10px;text-shadow:0 0 25px rgba(0,242,255,.6);
-        }
-        .firebase-badge { color:#ff9800;font-size:12px;letter-spacing:3px;text-transform:uppercase;margin-bottom:10px;opacity:.8; }
-        .menu-layout { display:flex;flex-direction:row;justify-content:center;align-items:stretch;gap:20px;width:100%;max-width:1100px;flex-shrink:0; }
-        .menu-section {
-            flex:1;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.15);
-            border-radius:24px;padding:20px;display:flex;flex-direction:column;align-items:center;
-            backdrop-filter:blur(10px);min-width:0;
-        }
-        .section-title {
-            color:#ccc;font-size:12px;font-weight:bold;margin-bottom:15px;text-transform:uppercase;
-            letter-spacing:2px;border-bottom:1px solid rgba(0,242,255,.3);padding-bottom:5px;width:100%;text-align:center;
-        }
-        .toggle-btn {
-            background:#222;border:2px solid #444;color:white;padding:12px 20px;border-radius:50px;cursor:pointer;
-            display:flex;align-items:center;justify-content:center;gap:12px;font-weight:bold;
-            transition:all .3s;width:100%;max-width:200px;
-        }
-        .toggle-btn.active { background:var(--danger-color);border-color:#ff8888;box-shadow:0 0 15px rgba(255,77,77,.4); }
-        .btn-mode {
-            background:var(--accent-color);color:#000;border:none;padding:15px 20px;font-size:13px;
-            font-weight:bold;margin-bottom:12px;border-radius:50px;cursor:pointer;width:100%;max-width:300px;
-            box-shadow:0 4px 15px rgba(0,242,255,.25);transition:transform .2s;
-        }
-        .btn-mode:active { transform:scale(.97); }
-        .btn-fullscreen-toggle {
-            background:rgba(0,242,255,.1);color:#00f2ff;border:2px solid #00f2ff;padding:10px 25px;
-            font-size:14px;border-radius:50px;cursor:pointer;font-weight:bold;transition:all .2s;margin-top:8px;
-        }
-        .btn-fullscreen-toggle:hover { background:rgba(0,242,255,.2);transform:scale(1.05); }
-
-        /* GAME */
-        .control-panel {
-            width:18%;height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;
-            background:var(--panel-color);border-left:3px solid var(--panel-border);border-right:3px solid var(--panel-border);z-index:10;
-        }
-        #game-field { flex-grow:1;position:relative;background:var(--game-bg);box-shadow:inset 0 0 100px rgba(0,0,0,.8); }
-        canvas { display:block;width:100%;height:100%; }
-        .btn-action {
-            width:90px;height:90px;background:radial-gradient(circle,#ff4757,#e84118);border-radius:50%;
-            display:flex;justify-content:center;align-items:center;color:white;font-weight:bold;
-            font-size:16px;box-shadow:0 6px 0 #8a2a1a;touch-action:none;cursor:pointer;
-        }
-        .joystick-base { width:130px;height:130px;background:rgba(0,0,0,.1);border:2px solid rgba(0,0,0,.1);border-radius:50%;position:relative;touch-action:none; }
-        .joystick-thumb { width:55px;height:55px;background:var(--accent-color);border-radius:50%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);box-shadow:0 4px 12px rgba(0,0,0,.3);pointer-events:none; }
-        #hud {
-            position:absolute;top:15px;left:50%;transform:translateX(-50%);
-            display:flex;flex-direction:column;align-items:center;gap:8px;
-            color:white;font-weight:bold;text-shadow:0 0 10px rgba(0,242,255,.5);pointer-events:none;z-index:20;
-        }
-        /* IN-GAME POPUP — removed */
-
-        /* RESULT */
-        #screen-result {
-            position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-            background:rgba(5,5,20,.97);border:2px solid var(--accent-color);padding:30px 35px;
-            border-radius:20px;color:white;text-align:center;display:none;z-index:150;
-            box-shadow:0 0 60px rgba(0,242,255,.2);min-width:340px;max-width:90vw;
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
+            padding: 30px 20px;
         }
 
-        /* NICKNAME MODAL */
-        #nickname-modal { display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;justify-content:center;align-items:center; }
-        #nickname-modal.show { display:flex; }
-        .modal-box {
-            background:#0d0d1f;border:2px solid var(--accent-color);border-radius:20px;
-            padding:35px;text-align:center;width:340px;max-width:90vw;
-            box-shadow:0 0 50px rgba(0,242,255,.2);animation:modalIn .3s cubic-bezier(.34,1.56,.64,1);
+        /* HEADER */
+        .header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 30px; flex-wrap: wrap; gap: 15px;
         }
-        @keyframes modalIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
-        .modal-box h3 { color:var(--accent-color);margin:0 0 6px 0;font-size:20px;letter-spacing:2px; }
-        .modal-box p { color:#888;font-size:13px;margin:0 0 18px 0; }
-        .score-preview { font-size:52px;font-weight:bold;color:white;line-height:1;margin-bottom:18px; }
-        #nickname-input {
-            width:100%;box-sizing:border-box;background:rgba(255,255,255,.07);
-            border:2px solid rgba(0,242,255,.4);border-radius:12px;color:white;font-size:18px;
-            padding:12px 16px;text-align:center;outline:none;letter-spacing:2px;transition:border-color .2s;
+        .header h1 {
+            font-size: 22px; letter-spacing: 4px; color: var(--accent);
+            text-shadow: 0 0 20px rgba(0,242,255,.4);
         }
-        #nickname-input:focus { border-color:var(--accent-color); }
-        .modal-btns { display:flex;gap:10px;margin-top:14px; }
-        .btn-submit { flex:2;background:var(--accent-color);color:#000;border:none;padding:14px;border-radius:50px;font-size:15px;font-weight:bold;cursor:pointer;transition:opacity .2s; }
-        .btn-submit:disabled { opacity:.4;cursor:not-allowed; }
-        .btn-skip { flex:1;background:rgba(255,255,255,.08);color:#777;border:1px solid #333;padding:14px;border-radius:50px;font-size:13px;cursor:pointer; }
-        .uploading-msg { color:#888;font-size:13px;margin-top:10px;min-height:18px; }
-        .hand-label { color:#888;font-size:12px;margin:14px 0 8px 0;text-align:left;width:100%;letter-spacing:1px; }
-        .hand-btns { display:flex;gap:8px;width:100%; }
-        .hand-btn { flex:1;padding:10px 6px;border-radius:12px;font-size:13px;font-weight:bold;cursor:pointer;background:rgba(255,255,255,.06);border:2px solid #333;color:#777;transition:all .2s;text-align:center; }
-        .hand-btn.selected { background:rgba(0,242,255,.15);border-color:var(--accent-color);color:var(--accent-color); }
+        .header p { font-size: 12px; color: var(--muted); margin-top: 4px; letter-spacing: 1px; }
 
-        @media(max-width:768px){.menu-layout{flex-direction:column;gap:15px;}.menu-section{padding:15px;}}
+        /* STATS CARDS */
+        .stats-row {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 15px; margin-bottom: 25px;
+        }
+        .stat-card {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 14px; padding: 18px 20px;
+        }
+        .stat-card .label { font-size: 11px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+        .stat-card .value { font-size: 32px; font-weight: bold; color: var(--accent); line-height: 1; }
+        .stat-card .sub { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+        /* TOOLBAR */
+        .toolbar {
+            display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; align-items: center;
+        }
+        .toolbar select, .toolbar input {
+            background: var(--surface); border: 1px solid var(--border);
+            color: var(--text); padding: 8px 12px; border-radius: 8px; font-size: 13px; outline: none;
+        }
+        .toolbar select:focus, .toolbar input:focus { border-color: var(--accent); }
+        .spacer { flex: 1; }
+        .btn {
+            padding: 9px 18px; border-radius: 8px; font-size: 13px; font-weight: bold;
+            cursor: pointer; border: none; transition: all .2s; display: flex; align-items: center; gap: 6px;
+        }
+        .btn-csv { background: rgba(0,242,255,.12); color: var(--accent); border: 1px solid var(--accent); }
+        .btn-csv:hover { background: rgba(0,242,255,.22); }
+        .btn-reset { background: rgba(255,77,77,.12); color: var(--danger); border: 1px solid var(--danger); }
+        .btn-reset:hover { background: rgba(255,77,77,.22); }
+        .btn-reload { background: rgba(255,255,255,.06); color: #aaa; border: 1px solid #333; }
+        .btn-reload:hover { background: rgba(255,255,255,.1); }
+
+        /* TABLE */
+        .table-wrap {
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 16px; overflow: hidden;
+        }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        thead tr { background: rgba(0,242,255,.07); }
+        th {
+            padding: 13px 16px; text-align: left; font-size: 11px; letter-spacing: 2px;
+            color: var(--accent); text-transform: uppercase; font-weight: 600;
+            border-bottom: 1px solid var(--border); cursor: pointer; user-select: none;
+            white-space: nowrap;
+        }
+        th:hover { color: #fff; }
+        th .sort-icon { margin-left: 4px; opacity: .4; }
+        th.sorted .sort-icon { opacity: 1; }
+        tbody tr {
+            border-bottom: 1px solid rgba(255,255,255,.04);
+            transition: background .15s;
+        }
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: rgba(255,255,255,.03); }
+        td { padding: 11px 16px; color: var(--text); }
+        td.score { color: var(--accent); font-weight: bold; font-size: 15px; }
+        td.nickname { font-weight: 600; }
+
+        .badge {
+            display: inline-block; padding: 2px 8px; border-radius: 20px;
+            font-size: 11px; font-weight: bold; letter-spacing: 1px;
+        }
+        .badge-mode1 { background: rgba(0,242,255,.15); color: var(--accent); }
+        .badge-mode2 { background: rgba(255,159,67,.15); color: var(--warn); }
+        .badge-on  { background: rgba(255,77,77,.15); color: var(--danger); }
+        .badge-off { background: rgba(46,204,113,.15); color: var(--success); }
+
+        .rank-medal { font-size: 18px; }
+
+        /* EMPTY / LOADING */
+        .empty-row td {
+            text-align: center; padding: 50px; color: var(--muted); font-size: 14px;
+        }
+
+        /* CONFIRM MODAL */
+        #confirm-modal {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,.85); z-index: 999;
+            justify-content: center; align-items: center;
+        }
+        #confirm-modal.show { display: flex; }
+        .confirm-box {
+            background: #0d0d1f; border: 2px solid var(--danger);
+            border-radius: 18px; padding: 35px; text-align: center;
+            width: 360px; max-width: 90vw;
+            box-shadow: 0 0 50px rgba(255,77,77,.2);
+            animation: popIn .25s cubic-bezier(.34,1.56,.64,1);
+        }
+        @keyframes popIn { from{transform:scale(.85);opacity:0} to{transform:scale(1);opacity:1} }
+        .confirm-box h3 { color: var(--danger); font-size: 20px; margin-bottom: 12px; }
+        .confirm-box p { color: #aaa; font-size: 13px; line-height: 1.7; margin-bottom: 24px; }
+        .confirm-box strong { color: #fff; }
+        .confirm-btns { display: flex; gap: 10px; }
+        .btn-confirm-yes {
+            flex: 1; background: var(--danger); color: #fff; border: none;
+            padding: 13px; border-radius: 50px; font-size: 14px; font-weight: bold; cursor: pointer;
+        }
+        .btn-confirm-no {
+            flex: 1; background: rgba(255,255,255,.08); color: #777; border: 1px solid #333;
+            padding: 13px; border-radius: 50px; font-size: 13px; cursor: pointer;
+        }
+
+        /* TOAST */
+        #toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(80px);
+            background: #1a1a2e; border: 1px solid var(--border); border-radius: 50px;
+            padding: 12px 24px; font-size: 13px; color: #fff;
+            transition: transform .3s cubic-bezier(.34,1.56,.64,1); z-index: 9999;
+            pointer-events: none; white-space: nowrap;
+        }
+        #toast.show { transform: translateX(-50%) translateY(0); }
+
+        .loading-text { color: var(--muted); font-size: 13px; padding: 20px 0; }
+        .count-label { font-size: 12px; color: var(--muted); margin-left: 4px; }
+
+        @media (max-width: 600px) {
+            .header { flex-direction: column; align-items: flex-start; }
+            th, td { padding: 10px 10px; font-size: 12px; }
+            .btn { padding: 8px 12px; font-size: 12px; }
+        }
     </style>
 </head>
 <body>
 
-<div id="orientation-warning">
-    <div style="width:50px;height:35px;border:2px solid white;border-radius:4px;margin-bottom:20px;"></div>
-    <h2>画面を横向きにしてください</h2>
-    <button class="btn-fullscreen-toggle" onclick="toggleFullScreen()">フルスクリーンにする</button>
+<div class="header">
+    <div>
+        <h1>SPACE DEFENDER <span style="font-size:14px;opacity:.5">/ ADMIN</span></h1>
+        <p>Firebase Realtime Database 管理画面</p>
+    </div>
+    <div style="font-size:12px;color:var(--muted);text-align:right">
+        <div id="db-status" style="color:#ff9f43">● 接続中...</div>
+        <div id="last-updated" style="margin-top:4px"></div>
+    </div>
 </div>
 
-<div id="screen-title">
-    <h1>SPACE DEFENDER</h1>
-    <div class="firebase-badge">🔥 Firebase Edition</div>
-    <div class="menu-layout">
-        <div class="menu-section">
-            <div class="section-title">操作モード選択</div>
-            <button class="btn-mode" onclick="startGame(1)">MODE 1 (左スティック / 右FIRE)</button>
-            <button class="btn-mode" onclick="startGame(2)">MODE 2 (右スティック / 左FIRE)</button>
-            <button class="btn-fullscreen-toggle" onclick="toggleFullScreen()">フルスクリーンにする</button>
-        </div>
-        <div class="menu-section">
-            <div class="section-title">システム設定</div>
-            <p style="color:#bbb;font-size:12px;margin:0 0 10px 0;">自機の当たり判定</p>
-            <button id="collision-toggle" class="toggle-btn" onclick="toggleCollision()">
-                <span id="toggle-icon"><svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg></span>
-                <span id="toggle-text">OFF (安全)</span>
-            </button>
-            <p style="color:#666;font-size:11px;text-align:center;margin-top:10px;">ONにすると敵接触で<br>爆発ペナルティが発生</p>
+<!-- STATS -->
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="label">総プレイ数</div>
+        <div class="value" id="stat-total">—</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">最高スコア</div>
+        <div class="value" id="stat-best">—</div>
+        <div class="sub" id="stat-best-player"></div>
+    </div>
+    <div class="stat-card">
+        <div class="label">平均スコア</div>
+        <div class="value" id="stat-avg">—</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">MODE 1 / MODE 2</div>
+        <div class="value" id="stat-modes">—</div>
+    </div>
+    <div class="stat-card">
+        <div class="label">当たり判定ON</div>
+        <div class="value" id="stat-collision">—</div>
+        <div class="sub">プレイ中</div>
+    </div>
+</div>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+    <select id="filter-mode" onchange="applyFilter()">
+        <option value="all">全モード</option>
+        <option value="1">MODE 1</option>
+        <option value="2">MODE 2</option>
+    </select>
+    <select id="filter-collision" onchange="applyFilter()">
+        <option value="all">当たり判定: すべて</option>
+        <option value="true">当たり判定: ON</option>
+        <option value="false">当たり判定: OFF</option>
+    </select>
+    <input id="search-nick" type="text" placeholder="🔍 ニックネーム検索" oninput="applyFilter()" style="min-width:160px">
+    <span id="row-count" class="count-label"></span>
+    <div class="spacer"></div>
+    <button class="btn btn-reload" onclick="loadData()">↺ 再読み込み</button>
+    <button class="btn btn-csv" onclick="downloadCSV()">⬇ CSVダウンロード</button>
+    <button class="btn btn-reset" onclick="openConfirm()">🗑 データリセット</button>
+</div>
+
+<!-- TABLE -->
+<div class="table-wrap">
+    <table>
+        <thead>
+            <tr>
+                <th onclick="sortBy('rank')">#<span class="sort-icon">↕</span></th>
+                <th onclick="sortBy('nickname')" id="th-nickname">ニックネーム<span class="sort-icon">↕</span></th>
+                <th onclick="sortBy('score')" id="th-score" class="sorted">スコア<span class="sort-icon">▼</span></th>
+                <th onclick="sortBy('mode')">モード<span class="sort-icon">↕</span></th>
+                <th onclick="sortBy('collisionEnabled')">当たり判定<span class="sort-icon">↕</span></th>
+                <th onclick="sortBy('dominantHand')">利き手<span class="sort-icon">↕</span></th>
+                <th onclick="sortBy('overheatCount')">OHeat<span class="sort-icon">↕</span></th>
+                <th onclick="sortBy('missCount')">MISS<span class="sort-icon">↕</span></th>
+                <th onclick="sortBy('timestamp')">日時<span class="sort-icon">↕</span></th>
+            </tr>
+        </thead>
+        <tbody id="table-body">
+            <tr class="empty-row"><td colspan="9">読み込み中...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- CONFIRM MODAL -->
+<div id="confirm-modal">
+    <div class="confirm-box">
+        <h3>⚠️ データリセット</h3>
+        <p>保存されている<strong>全スコアデータ</strong>を削除します。<br>この操作は取り消せません。本当に実行しますか？</p>
+        <div class="confirm-btns">
+            <button class="btn-confirm-yes" onclick="executeReset()">削除する</button>
+            <button class="btn-confirm-no" onclick="closeConfirm()">キャンセル</button>
         </div>
     </div>
 </div>
 
-<div id="nickname-modal">
-    <div class="modal-box">
-        <h3>MISSION COMPLETE</h3>
-        <p>スコアをランキングに登録しますか？</p>
-        <div class="score-preview" id="modal-score">0</div>
-        <input id="nickname-input" type="text" maxlength="12" placeholder="ニックネーム (最大12文字)" autocomplete="off" spellcheck="false">
-        <div class="hand-label">🖐 利き手</div>
-        <div class="hand-btns">
-            <div class="hand-btn" id="hand-right" onclick="selectHand('right')">右利き</div>
-            <div class="hand-btn" id="hand-left"  onclick="selectHand('left')">左利き</div>
-            <div class="hand-btn" id="hand-both"  onclick="selectHand('both')">両利き</div>
-        </div>
-        <div class="modal-btns">
-            <button class="btn-submit" id="btn-submit-score" onclick="submitScore()">🚀 登録する</button>
-            <button class="btn-skip" onclick="skipRegistration()">スキップ</button>
-        </div>
-        <div class="uploading-msg" id="uploading-msg"></div>
-    </div>
-</div>
+<div id="toast"></div>
 
-<div id="game-container">
-    <div id="left-panel" class="control-panel"></div>
-    <div id="game-field">
-        <div id="hud">
-            <div style="display:flex;gap:25px;font-size:18px;">
-                <div>TIME: <span id="timer">30</span>s</div>
-                <div>SCORE: <span id="score">0</span></div>
-                <div style="color:var(--accent-color)">BEST: <span id="best-score">0</span></div>
-            </div>
-            <div style="width:220px;height:12px;background:rgba(255,255,255,.1);border-radius:6px;overflow:hidden;margin-top:5px;">
-                <div id="heat-bar" style="width:0%;height:100%;background:var(--heat-color);transition:background .2s;"></div>
-            </div>
-            <div id="heat-warning" style="color:var(--danger-color);font-size:12px;height:15px;visibility:hidden;font-weight:900;">OVERHEATED!</div>
-        </div>
-        <canvas id="gameCanvas"></canvas>
-        <div id="screen-result">
-            <h2 style="color:var(--accent-color);margin-top:0;">MISSION COMPLETE</h2>
-            <div id="final-score" style="font-size:64px;margin:10px 0;font-weight:bold;line-height:1;">0</div>
-            <div style="display:flex;justify-content:center;gap:30px;margin:20px 0;padding:15px;background:rgba(255,255,255,.05);border-radius:12px;">
-                <div id="miss-stat" style="display:none;flex-direction:column;gap:5px;">
-                    <span style="font-size:12px;color:#889;">MISS (衝突)</span>
-                    <span id="final-miss" style="font-size:24px;font-weight:bold;color:var(--danger-color);">0</span>
-                </div>
-                <div style="display:flex;flex-direction:column;gap:5px;">
-                    <span style="font-size:12px;color:#889;">OVERHEAT</span>
-                    <span id="final-overheat" style="font-size:24px;font-weight:bold;color:var(--heat-color);">0</span>
-                </div>
-            </div>
-            <div id="new-record" style="color:#ffeb3b;font-weight:bold;margin-bottom:20px;display:none;font-size:20px;text-shadow:0 0 10px rgba(255,235,59,.5);">✨ NEW RECORD!</div>
-            <button class="btn-mode" style="width:100%;max-width:none;" onclick="location.reload()">タイトルへ戻る</button>
-        </div>
-    </div>
-    <div id="right-panel" class="control-panel"></div>
-</div>
-
-<!-- Firebase SDK (module) -->
+<!-- Firebase -->
 <script type="module">
-import { initializeApp }   from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
-import { getDatabase, ref, push, serverTimestamp }
-                           from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
+import { initializeApp }  from "https://www.gstatic.com/firebasejs/12.12.0/firebase-app.js";
+import { getDatabase, ref, onValue, remove }
+                          from "https://www.gstatic.com/firebasejs/12.12.0/firebase-database.js";
 
+// =============================================
+//  Firebase Config（ゲームと同じ設定）
+// =============================================
 const firebaseConfig = {
     apiKey:            "AIzaSyAWUDUE9GklRNJGg0OoaZrBDn4C91VEEEI",
     authDomain:        "leftandroightshooter.firebaseapp.com",
@@ -222,348 +271,260 @@ const firebaseConfig = {
     projectId:         "leftandroightshooter",
     storageBucket:     "leftandroightshooter.firebasestorage.app",
     messagingSenderId: "696555404744",
-    appId:             "1:696555404744:web:47a3c35636d68995e094fd",
-    measurementId:     "G-TF47F86Q97"
+    appId:             "1:696555404744:web:47a3c35636d68995e094fd"
 };
 
 const app = initializeApp(firebaseConfig);
 const db  = getDatabase(app);
 
-// ---------- score submission ----------
-let pendingScore = 0, pendingMode = 1, pendingCollision = false;
-let pendingOverheat = 0, pendingMiss = 0;
+// =============================================
+//  State
+// =============================================
+let allRows = [];       // 全データ（ソート済み）
+let filteredRows = [];  // フィルタ後
+let sortKey = 'score';
+let sortAsc = false;
 
-window.selectHand = function(hand) {
-    ['right','left','both'].forEach(h => {
-        document.getElementById('hand-'+h).classList.toggle('selected', h===hand);
+// =============================================
+//  Load data
+// =============================================
+let _unsubscribeData = null;
+
+window.loadData = function() {
+    document.getElementById('db-status').textContent = '● 接続中...';
+    document.getElementById('db-status').style.color = '#ff9f43';
+    document.getElementById('table-body').innerHTML = '<tr class="empty-row"><td colspan="9">読み込み中...</td></tr>';
+
+    // 既存リスナーを解除してから再購読（重複防止）
+    if (_unsubscribeData) { _unsubscribeData(); _unsubscribeData = null; }
+
+    _unsubscribeData = onValue(ref(db, 'scores'), snap => {
+        allRows = [];
+        if (snap.exists()) {
+            snap.forEach(modeSnap => {
+                // "mode1" → 1, "mode2" → 2 を確実に数値で取得
+                const modeNum = parseInt(modeSnap.key.replace('mode',''), 10);
+                modeSnap.forEach(entrySnap => {
+                    const d = entrySnap.val();
+                    // d.mode が存在しない古いデータはmodeNumで補完
+                    const modeVal = (d.mode !== undefined && !isNaN(Number(d.mode)))
+                        ? Number(d.mode) : modeNum;
+                    // スコア0・未登録データは除外
+                    if (!d.score || d.score <= 0 || !d.nickname || d.nickname === '???') return;
+                    allRows.push({
+                        key:       entrySnap.key,
+                        modeKey:   modeSnap.key,
+                        nickname:  d.nickname  || '???',
+                        score:     Number(d.score) || 0,
+                        mode:      modeVal,
+                        collisionEnabled: !!d.collisionEnabled,
+                        overheatCount: Number(d.overheatCount) || 0,
+                        missCount:     Number(d.missCount)     || 0,
+                        dominantHand:  d.dominantHand || '—',
+                        timestamp: d.timestamp || 0
+                    });
+                });
+            });
+        }
+
+        document.getElementById('db-status').textContent = '● 接続済み';
+        document.getElementById('db-status').style.color = '#2ecc71';
+        document.getElementById('last-updated').textContent =
+            '最終更新: ' + new Date().toLocaleTimeString('ja-JP');
+
+        updateStats();
+        applyFilter();
+    }, err => {
+        document.getElementById('db-status').textContent = '● 接続エラー';
+        document.getElementById('db-status').style.color = '#ff4d4d';
+        document.getElementById('table-body').innerHTML =
+            `<tr class="empty-row"><td colspan="9">エラー: ${err.message}</td></tr>`;
     });
-    window._selectedHand = hand;
 };
 
-window._openNicknameModal = (sc, mode, collision, overheat, miss) => {
-    pendingScore=sc; pendingMode=mode; pendingCollision=!!collision;
-    pendingOverheat=overheat||0; pendingMiss=miss||0;
-    // 利き手リセット
-    window._selectedHand = null;
-    ['right','left','both'].forEach(h => document.getElementById('hand-'+h).classList.remove('selected'));
-    document.getElementById('modal-score').textContent = Number(sc).toLocaleString();
-    document.getElementById('nickname-input').value = localStorage.getItem('lastNickname')||'';
-    document.getElementById('uploading-msg').textContent = '';
-    document.getElementById('btn-submit-score').disabled = false;
-    document.getElementById('nickname-modal').classList.add('show');
-    setTimeout(()=>document.getElementById('nickname-input').focus(),100);
-};
+// =============================================
+//  Stats
+// =============================================
+function updateStats() {
+    const total = allRows.length;
+    document.getElementById('stat-total').textContent = total.toLocaleString();
 
-window.submitScore = async () => {
-    const nick = document.getElementById('nickname-input').value.trim();
-    if (!nick) {
-        const inp = document.getElementById('nickname-input');
-        inp.style.borderColor='var(--danger-color)';
-        setTimeout(()=>inp.style.borderColor='rgba(0,242,255,.4)',1000); return;
-    }
-    if (!window._selectedHand) {
-        ['right','left','both'].forEach(h => {
-            const el = document.getElementById('hand-'+h);
-            el.style.borderColor='var(--danger-color)';
-            setTimeout(()=>el.style.borderColor='#333',1000);
+    if (total === 0) {
+        ['stat-best','stat-avg','stat-modes','stat-collision'].forEach(id => {
+            document.getElementById(id).textContent = '—';
         });
-        document.getElementById('uploading-msg').textContent='⚠️ 利き手を選択してください';
-        setTimeout(()=>document.getElementById('uploading-msg').textContent='',1500);
+        document.getElementById('stat-best-player').textContent = '';
         return;
     }
-    const btn=document.getElementById('btn-submit-score'), msg=document.getElementById('uploading-msg');
-    btn.disabled=true; msg.textContent='登録中... 🚀';
+
+    const sorted = [...allRows].sort((a,b) => b.score - a.score);
+    document.getElementById('stat-best').textContent = sorted[0].score.toLocaleString();
+    document.getElementById('stat-best-player').textContent = sorted[0].nickname;
+
+    const avg = Math.round(allRows.reduce((s,r) => s+r.score, 0) / total);
+    document.getElementById('stat-avg').textContent = avg.toLocaleString();
+
+    const m1 = allRows.filter(r => r.mode===1).length;
+    const m2 = allRows.filter(r => r.mode===2).length;
+    document.getElementById('stat-modes').textContent = `${m1} / ${m2}`;
+
+    const colOn = allRows.filter(r => r.collisionEnabled).length;
+    document.getElementById('stat-collision').textContent =
+        total ? `${colOn} / ${total}` : '—';
+}
+
+// =============================================
+//  Filter + Sort + Render
+// =============================================
+window.applyFilter = function() {
+    const modeF  = document.getElementById('filter-mode').value;
+    const colF   = document.getElementById('filter-collision').value;
+    const nick   = document.getElementById('search-nick').value.trim().toLowerCase();
+
+    filteredRows = allRows.filter(r => {
+        if (modeF !== 'all' && String(r.mode) !== modeF) return false;
+        if (colF  !== 'all' && String(r.collisionEnabled) !== colF) return false;
+        if (nick  && !r.nickname.toLowerCase().includes(nick)) return false;
+        return true;
+    });
+
+    sortRows();
+    renderTable();
+};
+
+window.sortBy = function(key) {
+    if (sortKey === key) { sortAsc = !sortAsc; }
+    else { sortKey = key; sortAsc = key === 'nickname'; }
+
+    // update header icons
+    document.querySelectorAll('th').forEach(th => th.classList.remove('sorted'));
+    const icons = {'score':'th-score','nickname':'th-nickname'};
+    if (icons[key]) document.getElementById(icons[key])?.classList.add('sorted');
+
+    sortRows();
+    renderTable();
+};
+
+function sortRows() {
+    filteredRows.sort((a, b) => {
+        let va = a[sortKey], vb = b[sortKey];
+        if (typeof va === 'string') va = va.toLowerCase();
+        if (typeof vb === 'string') vb = vb.toLowerCase();
+        if (va < vb) return sortAsc ? -1 : 1;
+        if (va > vb) return sortAsc ? 1 : -1;
+        return 0;
+    });
+}
+
+const MEDALS = ['🥇','🥈','🥉'];
+
+function renderTable() {
+    const tbody = document.getElementById('table-body');
+    document.getElementById('row-count').textContent =
+        `${filteredRows.length.toLocaleString()} 件`;
+
+    if (filteredRows.length === 0) {
+        tbody.innerHTML = '<tr class="empty-row"><td colspan="9">データがありません</td></tr>';
+        return;
+    }
+
+    // スコア順ランクを全体で計算
+    const scoreRanks = {};
+    [...allRows].sort((a,b)=>b.score-a.score).forEach((r,i) => {
+        if (!scoreRanks[r.key]) scoreRanks[r.key] = i+1;
+    });
+
+    tbody.innerHTML = filteredRows.map((r, i) => {
+        const rank  = scoreRanks[r.key] || (i+1);
+        const medal = rank <= 3 ? MEDALS[rank-1] : rank;
+        const dt    = r.timestamp
+            ? new Date(r.timestamp).toLocaleString('ja-JP', {month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'})
+            : '—';
+        return `<tr>
+            <td><span class="rank-medal">${medal}</span></td>
+            <td class="nickname">${esc(r.nickname)}</td>
+            <td class="score">${r.score.toLocaleString()}</td>
+            <td><span class="badge badge-mode${r.mode}">MODE ${r.mode}</span></td>
+            <td><span class="badge ${r.collisionEnabled ? 'badge-on' : 'badge-off'}">${r.collisionEnabled ? 'ON' : 'OFF'}</span></td>
+            <td style="text-align:center">${{right:"✋右",left:"🤚左",both:"👐両"}[r.dominantHand]||r.dominantHand}</td>
+            <td style="text-align:center;color:var(--warn)">${r.overheatCount}</td>
+            <td style="text-align:center;color:var(--danger)">${r.collisionEnabled ? r.missCount : '—'}</td>
+            <td style="color:var(--muted)">${dt}</td>
+        </tr>`;
+    }).join('');
+}
+
+function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// =============================================
+//  CSV Download
+// =============================================
+window.downloadCSV = function() {
+    if (filteredRows.length === 0) { showToast('⚠️ ダウンロードするデータがありません'); return; }
+
+    const headers = ['rank','nickname','score','mode','collisionEnabled','dominantHand','overheatCount','missCount','timestamp'];
+    const scoreRanks = {};
+    [...allRows].sort((a,b)=>b.score-a.score).forEach((r,i) => {
+        if (!scoreRanks[r.key]) scoreRanks[r.key] = i+1;
+    });
+
+    const rows = filteredRows.map(r => [
+        scoreRanks[r.key] || '',
+        `"${r.nickname.replace(/"/g,'""')}"`,
+        r.score,
+        r.mode,
+        r.collisionEnabled ? 'ON' : 'OFF',
+        r.dominantHand,
+        r.overheatCount,
+        r.collisionEnabled ? r.missCount : '',
+        r.timestamp ? new Date(r.timestamp).toLocaleString('ja-JP') : ''
+    ]);
+
+    const csv = '\uFEFF' + [headers, ...rows].map(row => row.join(',')).join('\r\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url;
+    a.download = `space-defender-scores_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(`✅ ${filteredRows.length}件のデータをダウンロードしました`);
+};
+
+// =============================================
+//  Reset
+// =============================================
+window.openConfirm  = () => document.getElementById('confirm-modal').classList.add('show');
+window.closeConfirm = () => document.getElementById('confirm-modal').classList.remove('show');
+
+window.executeReset = async function() {
+    closeConfirm();
     try {
-        await push(ref(db,`scores/mode${pendingMode}`), {
-            nickname: nick.slice(0,12), score: pendingScore,
-            mode: pendingMode, collisionEnabled: pendingCollision,
-            overheatCount: pendingOverheat, missCount: pendingMiss,
-            dominantHand: window._selectedHand,
-            timestamp: serverTimestamp()
-        });
-        localStorage.setItem('lastNickname', nick);
-        msg.textContent='✅ 登録完了！';
-        setTimeout(()=>{ document.getElementById('nickname-modal').classList.remove('show'); window._showResult(); }, 800);
+        await remove(ref(db, 'scores'));
+        showToast('🗑 全データを削除しました');
     } catch(e) {
-        msg.textContent='❌ エラー: '+e.message; btn.disabled=false;
+        showToast('❌ エラー: ' + e.message);
     }
 };
 
-window.skipRegistration = () => {
-    document.getElementById('nickname-modal').classList.remove('show');
-    window._showResult();
+// =============================================
+//  Toast
+// =============================================
+let toastTimer;
+window.showToast = function(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
 };
 
-window._firebaseReady = true;
-console.log('✅ Firebase connected');
-</script>
-
-<!-- Game (classic script, communicates via window globals) -->
-<script>
-const sounds = {
-    shoot:       new Audio('https://raw.githubusercontent.com/kono3478/ShootingSE_NES/main/NES-Shooter01-1(Shoot).mp3'),
-    damageGreen: new Audio('https://raw.githubusercontent.com/kono3478/ShootingSE_NES/main/NES-Shooter01-3(Damage).mp3'),
-    damageYellow:new Audio('https://raw.githubusercontent.com/kono3478/ShootingSE_NES/main/NES-Shooter01-4(Damage).mp3'),
-    damageRed:   new Audio('https://raw.githubusercontent.com/kono3478/ShootingSE_SNES/main/SNES-Shooter01-06(Damage).mp3'),
-    playerDeath: new Audio('https://raw.githubusercontent.com/kono3478/ShootingSE_NES/main/NES-Shooter01-5(Damage).mp3'),
-    bgm:         new Audio('https://raw.githubusercontent.com/kono3478/BGM/main/8bit-act04_stage01.mp3')
-};
-sounds.bgm.loop=true; sounds.bgm.volume=0.4;
-function playSound(s){s.currentTime=0;s.play().catch(()=>{});}
-
-const canvas=document.getElementById('gameCanvas'), ctx=canvas.getContext('2d');
-const scoreEl=document.getElementById('score'), bestEl=document.getElementById('best-score');
-const timerEl=document.getElementById('timer'), heatBarEl=document.getElementById('heat-bar');
-const heatWarnEl=document.getElementById('heat-warning');
-const finalScoreEl=document.getElementById('final-score'), finalMissEl=document.getElementById('final-miss');
-const finalOverheatEl=document.getElementById('final-overheat'), newRecordEl=document.getElementById('new-record');
-
-let gameState='title', score=0, timeLeft=30, gameMode=1;
-let spawnId=null, timerId=null, rafId=null;
-let isCollisionEnabled=false, missCount=0, overheatCount=0;
-
-window._showResult = ()=>{ document.getElementById('screen-result').style.display='block'; };
-
-// Stars
-const stars=[];
-const starColors=['#ffffff','#afeeee','#fffacd','#ffb6c1','#00f2ff'];
-function initStars(){
-    stars.length=0;
-    for(let i=0;i<100;i++) stars.push({
-        x:Math.random()*canvas.width, y:Math.random()*canvas.height,
-        size:Math.random()*2, color:starColors[Math.floor(Math.random()*starColors.length)],
-        opacity:Math.random(), speed:0.01+Math.random()*0.03
-    });
-}
-
-// Player
-const player={x:0,y:0,radius:18,baseSpeed:6.5,angle:0,color:'#00f2ff',
-    lastFireTime:0,fireInterval:120,heat:0,isOverheated:false,
-    heatIncreasePerShot:4.8,coolDownRate:0.35,overheatCoolDownRate:0.5};
-const joystick={active:false,pointerId:null,originX:0,originY:0,vectorX:0,vectorY:0,maxRadius:45};
-let actionPressed=false;
-const bullets=[], enemies=[], particles=[];
-const enemyTypes=[
-    {type:'S',size:14,speed:4.5,score:50,color:'#ff4d4d'},
-    {type:'M',size:24,speed:3.0,score:30,color:'#f1c40f'},
-    {type:'L',size:38,speed:1.8,score:10,color:'#2ecc71'}
-];
-const keys={up:false,down:false,left:false,right:false};
-
-function resize(){
-    if(!canvas.parentElement)return;
-    canvas.width=canvas.parentElement.clientWidth;
-    canvas.height=canvas.parentElement.clientHeight;
-    initStars();
-    if(player.x===0||gameState==='title'){player.x=canvas.width/2;player.y=canvas.height/2;}
-}
-window.addEventListener('resize',()=>setTimeout(resize,200));
-
-function toggleCollision(){
-    isCollisionEnabled=!isCollisionEnabled;
-    document.getElementById('collision-toggle').classList.toggle('active',isCollisionEnabled);
-    document.getElementById('toggle-text').innerText=isCollisionEnabled?'ON (危険)':'OFF (安全)';
-    document.getElementById('toggle-icon').innerHTML=isCollisionEnabled
-        ?`<svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor"><path d="M12 2C6.49 2 2 6.49 2 12s4.49 10 10 10 10-4.49 10-10S17.51 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3-8c0 1.66-1.34 3-3 3s-3-1.34-3-3 1.34-3 3-3 3 1.34 3 3z"/></svg>`
-        :`<svg viewBox="0 0 24 24" style="width:20px;height:20px;fill:currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>`;
-}
-
-async function toggleFullScreen(){
-    try{
-        const d=document,el=d.documentElement;
-        const full=!!(d.fullscreenElement||d.webkitFullscreenElement||d.mozFullScreenElement||d.msFullscreenElement);
-        if(!full){const r=el.requestFullscreen||el.mozRequestFullScreen||el.webkitRequestFullScreen||el.msRequestFullscreen;if(r)await r.call(el);}
-        else{const x=d.exitFullscreen||d.mozCancelFullScreen||d.webkitExitFullscreen||d.msExitFullscreen;if(x)await x.call(d);}
-    }catch(e){}
-}
-function updateFullscreenUI(){
-    const full=!!(document.fullscreenElement||document.webkitFullscreenElement||document.mozFullScreenElement||document.msFullscreenElement);
-    document.querySelectorAll('.btn-fullscreen-toggle').forEach(b=>{
-        b.innerText=full?'フルスクリーンを解除':'フルスクリーンにする';
-        b.style.borderColor=full?'#ff4d4d':'#00f2ff'; b.style.color=full?'#ff4d4d':'#00f2ff';
-    });
-    setTimeout(resize,300);
-}
-['fullscreenchange','webkitfullscreenchange','mozfullscreenchange','MSFullscreenChange'].forEach(ev=>document.addEventListener(ev,updateFullscreenUI));
-
-function createControls(mode){
-    const L=document.getElementById('left-panel'),R=document.getElementById('right-panel');
-    L.innerHTML='';R.innerHTML='';
-    const joy=`<div class="joystick-base" id="joystick-base"><div class="joystick-thumb" id="joystick-thumb"></div></div>`;
-    const act=`<div class="btn-action" id="btn-action">FIRE</div>`;
-    if(mode===1){L.innerHTML=joy;R.innerHTML=act;}else{L.innerHTML=act;R.innerHTML=joy;}
-    setupJoystick(); setupActionBtn();
-}
-function setupJoystick(){
-    const base=document.getElementById('joystick-base'),thumb=document.getElementById('joystick-thumb');
-    if(!base||!thumb)return;
-    base.addEventListener('pointerdown',e=>{
-        e.preventDefault();
-        const r=base.getBoundingClientRect();
-        joystick.originX=r.left+r.width/2;joystick.originY=r.top+r.height/2;
-        joystick.active=true;joystick.pointerId=e.pointerId;
-    });
-    window.addEventListener('pointermove',e=>{
-        if(!joystick.active||e.pointerId!==joystick.pointerId)return;
-        let dx=e.clientX-joystick.originX,dy=e.clientY-joystick.originY;
-        const d=Math.hypot(dx,dy);
-        if(d>joystick.maxRadius){dx=dx/d*joystick.maxRadius;dy=dy/d*joystick.maxRadius;}
-        joystick.vectorX=dx/joystick.maxRadius;joystick.vectorY=dy/joystick.maxRadius;
-        thumb.style.transform=`translate(calc(-50% + ${dx}px),calc(-50% + ${dy}px))`;
-    });
-    const end=e=>{if(e&&e.pointerId!==joystick.pointerId)return;joystick.active=false;joystick.vectorX=0;joystick.vectorY=0;thumb.style.transform='translate(-50%,-50%)';};
-    window.addEventListener('pointerup',end);window.addEventListener('pointercancel',end);
-}
-function setupActionBtn(){
-    const btn=document.getElementById('btn-action');
-    if(!btn)return;
-    btn.addEventListener('pointerdown',e=>{e.preventDefault();actionPressed=true;});
-    btn.addEventListener('pointerup',e=>{e.preventDefault();actionPressed=false;});
-    btn.addEventListener('pointerleave',e=>{e.preventDefault();actionPressed=false;});
-}
-
-window.addEventListener('keydown',e=>{
-    if(['ArrowUp','w'].includes(e.key))keys.up=true;
-    if(['ArrowDown','s'].includes(e.key))keys.down=true;
-    if(['ArrowLeft','a'].includes(e.key))keys.left=true;
-    if(['ArrowRight','d'].includes(e.key))keys.right=true;
-    if([' ','Enter'].includes(e.key))actionPressed=true;
-});
-window.addEventListener('keyup',e=>{
-    if(['ArrowUp','w'].includes(e.key))keys.up=false;
-    if(['ArrowDown','s'].includes(e.key))keys.down=false;
-    if(['ArrowLeft','a'].includes(e.key))keys.left=false;
-    if(['ArrowRight','d'].includes(e.key))keys.right=false;
-    if([' ','Enter'].includes(e.key))actionPressed=false;
-});
-
-function spawnEnemy(){
-    if(gameState!=='playing')return;
-    const type=enemyTypes[Math.floor(Math.random()*enemyTypes.length)];
-    let x,y;
-    const s=Math.floor(Math.random()*4);
-    if(s===0){x=Math.random()*canvas.width;y=-50;}
-    else if(s===1){x=Math.random()*canvas.width;y=canvas.height+50;}
-    else if(s===2){x=-50;y=Math.random()*canvas.height;}
-    else{x=canvas.width+50;y=Math.random()*canvas.height;}
-    const a=Math.atan2(canvas.height/2-y,canvas.width/2-x)+(Math.random()-.5)*.4;
-    enemies.push({x,y,vx:Math.cos(a)*type.speed,vy:Math.sin(a)*type.speed,...type});
-}
-
-function startGame(mode){
-    gameMode=mode;gameState='playing';
-    score=0;timeLeft=30;missCount=0;overheatCount=0;
-    sounds.bgm.currentTime=0;sounds.bgm.play().catch(()=>{});
-    if(spawnId)clearInterval(spawnId);
-    if(timerId)clearInterval(timerId);
-    if(rafId)cancelAnimationFrame(rafId);
-    particles.length=0;enemies.length=0;bullets.length=0;
-    player.x=canvas.width/2;player.y=canvas.height/2;
-    player.heat=0;player.isOverheated=false;
-    timerEl.innerText=timeLeft;scoreEl.innerText=0;
-    bestEl.innerText=localStorage.getItem('bestScore_mode'+mode)||0;
-    document.getElementById('screen-title').style.display='none';
-    createControls(mode);resize();
-    spawnId=setInterval(spawnEnemy,750);
-    timerId=setInterval(()=>{
-        if(gameState==='gameover')return;
-        timeLeft--;timerEl.innerText=timeLeft;
-        if(timeLeft<=0)endGame();
-    },1000);
-    rafId=requestAnimationFrame(gameLoop);
-}
-
-function endGame(){
-    gameState='gameover';sounds.bgm.pause();
-    finalScoreEl.innerText=score;finalOverheatEl.innerText=overheatCount;
-    if(isCollisionEnabled){document.getElementById('miss-stat').style.display='flex';finalMissEl.innerText=missCount;}
-    else{document.getElementById('miss-stat').style.display='none';}
-    if(spawnId)clearInterval(spawnId);
-    if(timerId)clearInterval(timerId);
-    const best=parseInt(localStorage.getItem('bestScore_mode'+gameMode))||0;
-    if(score>best){localStorage.setItem('bestScore_mode'+gameMode,score);newRecordEl.style.display='block';}
-    else{newRecordEl.style.display='none';}
-    if(window._firebaseReady&&score>0){window._openNicknameModal(score,gameMode,isCollisionEnabled,overheatCount,missCount);}
-    else{window._showResult();}
-}
-
-function update(){
-    stars.forEach(s=>{s.opacity+=s.speed;if(s.opacity>1||s.opacity<.1)s.speed*=-1;});
-    if(gameState==='hit'||gameState==='gameover'){
-        particles.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;p.life-=.035;if(p.life<=0)particles.splice(i,1);});return;
-    }
-    if(gameState!=='playing')return;
-
-    if(player.isOverheated){player.heat-=player.overheatCoolDownRate;if(player.heat<=5){player.heat=0;player.isOverheated=false;}}
-    else if(!actionPressed){player.heat=Math.max(0,player.heat-player.coolDownRate);}
-    heatBarEl.style.width=player.heat+'%';
-    heatBarEl.style.background=player.isOverheated?'var(--danger-color)':(player.heat>70?'#ffeb3b':'var(--heat-color)');
-    heatWarnEl.style.visibility=player.isOverheated?'visible':'hidden';
-
-    let ix=joystick.vectorX,iy=joystick.vectorY;
-    if(!joystick.active){
-        if(keys.left)ix=-1;if(keys.right)ix=1;if(keys.up)iy=-1;if(keys.down)iy=1;
-        if(ix!==0&&iy!==0){ix*=.707;iy*=.707;}
-    }
-    player.x+=ix*player.baseSpeed;player.y+=iy*player.baseSpeed;
-    player.x=Math.max(player.radius,Math.min(canvas.width-player.radius,player.x));
-    player.y=Math.max(player.radius,Math.min(canvas.height-player.radius,player.y));
-    if(Math.hypot(ix,iy)>.1)player.angle=Math.atan2(iy,ix);
-
-    if(actionPressed){
-        const now=Date.now();
-        if(!player.isOverheated&&now-player.lastFireTime>=player.fireInterval){
-            bullets.push({x:player.x+Math.cos(player.angle)*20,y:player.y+Math.sin(player.angle)*20,vx:Math.cos(player.angle)*11,vy:Math.sin(player.angle)*11});
-            player.lastFireTime=now;player.heat+=player.heatIncreasePerShot;
-            playSound(sounds.shoot);
-            if(player.heat>=100){player.heat=100;player.isOverheated=true;overheatCount++;}
-        }
-    }
-
-    bullets.forEach((b,i)=>{b.x+=b.vx;b.y+=b.vy;if(b.x<0||b.x>canvas.width||b.y<0||b.y>canvas.height)bullets.splice(i,1);});
-    enemies.forEach((e,i)=>{
-        e.x+=e.vx;e.y+=e.vy;
-        if(isCollisionEnabled&&Math.hypot(e.x-player.x,e.y-player.y)<player.radius+e.size*.7){
-            gameState='hit';missCount++;playSound(sounds.playerDeath);
-            for(let k=0;k<25;k++)particles.push({x:player.x,y:player.y,vx:(Math.random()-.5)*7,vy:(Math.random()-.5)*7,life:1,color:player.color});
-            setTimeout(()=>{if(gameState!=='gameover'){gameState='playing';enemies.length=0;bullets.length=0;player.x=canvas.width/2;player.y=canvas.height/2;}},1000);return;
-        }
-        bullets.forEach((b,j)=>{
-            if(Math.hypot(e.x-b.x,e.y-b.y)<e.size){
-                score+=e.score;scoreEl.innerText=score;
-                if(e.type==='L')playSound(sounds.damageGreen);
-                else if(e.type==='M')playSound(sounds.damageYellow);
-                else playSound(sounds.damageRed);
-                for(let k=0;k<12;k++)particles.push({x:e.x,y:e.y,vx:(Math.random()-.5)*7,vy:(Math.random()-.5)*7,life:1,color:e.color});
-                enemies.splice(i,1);bullets.splice(j,1);
-            }
-        });
-        if(e.x<-100||e.x>canvas.width+100||e.y<-100||e.y>canvas.height+100)enemies.splice(i,1);
-    });
-    particles.forEach((p,i)=>{p.x+=p.vx;p.y+=p.vy;p.life-=.035;if(p.life<=0)particles.splice(i,1);});
-}
-
-function draw(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    stars.forEach(s=>{ctx.globalAlpha=s.opacity;ctx.fillStyle=s.color;ctx.beginPath();ctx.arc(s.x,s.y,s.size,0,Math.PI*2);ctx.fill();});
-    ctx.globalAlpha=1.0;
-    bullets.forEach(b=>{ctx.beginPath();ctx.arc(b.x,b.y,4,0,Math.PI*2);ctx.fillStyle='#fff';ctx.shadowBlur=10;ctx.shadowColor='#0ff';ctx.fill();ctx.shadowBlur=0;});
-    enemies.forEach(e=>{ctx.save();ctx.translate(e.x,e.y);ctx.rotate(Math.atan2(e.vy,e.vx));ctx.fillStyle=e.color;ctx.beginPath();ctx.moveTo(e.size,0);ctx.lineTo(-e.size/2,e.size/2);ctx.lineTo(-e.size/2,-e.size/2);ctx.closePath();ctx.fill();ctx.restore();});
-    particles.forEach(p=>{ctx.globalAlpha=p.life;ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,2,0,Math.PI*2);ctx.fill();});
-    ctx.globalAlpha=1.0;
-    if(gameState==='playing'||gameState==='hit'){
-        ctx.save();ctx.translate(player.x,player.y);ctx.rotate(player.angle);
-        if(!isCollisionEnabled){ctx.globalAlpha=.8;ctx.strokeStyle=player.color;ctx.lineWidth=2;ctx.beginPath();ctx.arc(0,0,player.radius+5,0,Math.PI*2);ctx.stroke();}
-        ctx.fillStyle=player.isOverheated?'#444':player.color;
-        ctx.beginPath();ctx.moveTo(player.radius,0);ctx.lineTo(-player.radius,player.radius);ctx.lineTo(-player.radius/2,0);ctx.lineTo(-player.radius,-player.radius);ctx.closePath();
-        if(!player.isOverheated){ctx.shadowBlur=isCollisionEnabled?15:25;ctx.shadowColor=player.color;}
-        ctx.fill();ctx.restore();
-    }
-}
-
-function gameLoop(){update();draw();if(gameState!=='gameover')rafId=requestAnimationFrame(gameLoop);}
-
-window.onload=()=>{ resize();updateFullscreenUI();window.scrollTo(0,1); };
+// =============================================
+//  Init
+// =============================================
+loadData();
 </script>
 </body>
 </html>
