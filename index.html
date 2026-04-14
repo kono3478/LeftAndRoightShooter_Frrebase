@@ -288,17 +288,12 @@ let sortAsc = false;
 // =============================================
 //  Load data
 // =============================================
-let _unsubscribeData = null;
-
 window.loadData = function() {
     document.getElementById('db-status').textContent = '● 接続中...';
     document.getElementById('db-status').style.color = '#ff9f43';
     document.getElementById('table-body').innerHTML = '<tr class="empty-row"><td colspan="9">読み込み中...</td></tr>';
 
-    // 既存リスナーを解除してから再購読（重複防止）
-    if (_unsubscribeData) { _unsubscribeData(); _unsubscribeData = null; }
-
-    _unsubscribeData = onValue(ref(db, 'scores'), snap => {
+    onValue(ref(db, 'scores'), snap => {
         allRows = [];
         if (snap.exists()) {
             snap.forEach(modeSnap => {
@@ -309,8 +304,6 @@ window.loadData = function() {
                     // d.mode が存在しない古いデータはmodeNumで補完
                     const modeVal = (d.mode !== undefined && !isNaN(Number(d.mode)))
                         ? Number(d.mode) : modeNum;
-                    // スコア0・未登録データは除外
-                    if (!d.score || d.score <= 0 || !d.nickname || d.nickname === '???') return;
                     allRows.push({
                         key:       entrySnap.key,
                         modeKey:   modeSnap.key,
